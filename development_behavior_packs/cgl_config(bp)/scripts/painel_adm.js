@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft/server"
+import { world, system, GameMode } from "@minecraft/server"
 import { ActionFormData, ModalFormData} from "@minecraft/server-ui"
 
 system.runInterval(() =>{
@@ -17,13 +17,13 @@ system.runInterval(() =>{
                 }
                 switch (resutado.selection) {
                     case 0:
-                        source.setGameMode("Creative")
+                        source.setGameMode(GameMode.Creative)
                         break;
                     case 1:
-                        source.setGameMode("Survival")
+                        source.setGameMode(GameMode.Survival)
                         break;
                     case 3:
-                        source.setGameMode("Spectator")
+                        source.setGameMode(GameMode.Spectator)
                 
                     default:
                         break;
