@@ -6,7 +6,7 @@ world.afterEvents.playerJoin.subscribe((ev) => {
       const jugador = ev.playerId;
       for (let keyl of world.getAllPlayers()) {
         if (keyl.id === jugador) {
-          keyl.onScreenDisplay.setTitle("§l§aSeja bem-vindo!");
+          keyl.onScreenDisplay.setTitle("§l§aSeja bem-vindo!", ev.playerName);
           world.sendMessage("Bem vindo " + ev.playerId);
           world.sendMessage("Bem vindxo " + ev.playerName);
             }
