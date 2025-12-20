@@ -9,7 +9,7 @@ system.run(() =>{
     adm_painel.button("survival")
     adm_painel.button("espectador")
 
-    world.afterEvents.itemUse.subscribe((ev) =>{
+    world.beforeEvents.itemUse.subscribe((ev) =>{
         const {itemStack, source} = ev
         if (itemStack.typeId == "minecraft:compass" && source.hasTag("adm")) {
             adm_painel.show(source).then((resutado) =>{
