@@ -24,8 +24,6 @@ system.runInterval(() =>{
                         break;
                     case 3:
                         source.setGameMode(GameMode.Spectator)
-                
-                    default:
                         break;
                 }
             })
