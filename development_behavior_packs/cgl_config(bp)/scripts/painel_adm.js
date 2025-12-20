@@ -1,7 +1,7 @@
 import { world, system, GameMode } from "@minecraft/server"
 import { ActionFormData, ModalFormData} from "@minecraft/server-ui"
 
-system.runInterval(() =>{
+system.run(() =>{
     const adm_painel =  new ActionFormData();
     adm_painel.title("teste")
     adm_painel.label("teste2")
