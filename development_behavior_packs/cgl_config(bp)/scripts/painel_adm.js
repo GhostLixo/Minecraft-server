@@ -25,6 +25,7 @@ system.run(() =>{
                         break;
                     case 3:
                         source.setGameMode(GameMode.Spectator)
+                        world.seendMessage("Você mudrou para espectador  " + source.getGameMode());
                         break;
                 }
             })
