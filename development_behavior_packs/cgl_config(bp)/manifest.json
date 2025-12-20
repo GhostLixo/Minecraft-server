@@ -1,0 +1,39 @@
+{
+    "format_version": 2,
+    "header": {
+        "description": "configuraçao do core gear legends",
+        "name": "CGL Config(BP)",
+        "uuid": "e5145c36-5878-48d2-ba19-396025faa072",
+        "version": [ 1, 0, 0 ],
+        "min_engine_version": [ 1, 21, 100 ]
+    },
+    "modules": [
+        {
+            "description": "configuraçao do core gear legends",
+            "type": "data",
+            "uuid": "a9c4e359-adcc-4511-908b-ba566f130b43",
+            "version": [1,0,0]
+        },
+        {
+            "uuid": "239c134f-67bf-4738-9bcc-8c69d31b1f72",
+            "version": "1.0.0",
+            "type": "script",
+            "language": "javascript",
+            "entry": "scripts/main.js"
+        }
+    ],
+    "dependencies": [
+        {
+            "uuid": "fd7df248-d11b-4c4e-9294-c0e1e8bfdde5",
+            "version": [1, 0, 0]
+        },
+        {
+            "module_name": "@minecraft/server",
+            "version": "2.1.0"
+        },
+        {
+            "module_name": "@minecraft/server-ui",
+            "version": "2.0.0"
+        }
+    ]
+}

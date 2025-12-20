@@ -1,0 +1,109 @@
+{
+    "namespace": "rarity_and_stats_panel",
+  
+    "long_form_replacement": {
+        "type": "panel",
+        "size": [0, 0],
+        "controls": [
+            {
+                "reforge_anvil_menu@reforge_anvil_menu.reforge_anvil_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§6§lREFORGE')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "upgrade_stats_menu@upgrade_stats_menu.upgrade_stats_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§a§lSTATS UPGRADE')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "heavy_anvil_menu@heavy_anvil_menu.heavy_anvil_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§6§lHEAVY ANVIL')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "divine_forge_menu@divine_forge_menu.divine_forge_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§b§lDIVINE FORGE')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "divine_stats_upgrade_menu@divine_stats_upgrade_menu.divine_stats_upgrade_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§b§lDIVINE STATS')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "divine_stats_upgrade_new_menu@divine_stats_upgrade_new_menu.divine_stats_upgrade_new_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§l§bDIVINE SELECTION')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "divine_ascending_menu@divine_ascending_menu.divine_ascending_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§b§lASCENDING')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "divine_powers_upgrade_menu@divine_powers_upgrade_menu.divine_powers_upgrade_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§b§lDIVINE POWERS')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "signature_weapons_menu@signature_weapons_menu.signature_weapons_menu_content": {
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_property_name": "(#title_text = '§b§lSIGNATURE WEAPONS')",
+                            "target_property_name": "#visible"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

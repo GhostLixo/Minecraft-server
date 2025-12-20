@@ -1,0 +1,6 @@
+item.rarity.common=§7Common
+item.rarity.uncommon=§aUncommon
+item.rarity.rare=§9Rare
+item.rarity.epic=§5Epic
+item.rarity.legendary=§6Legendary
+item.skill.description=Smashes the ground and stuns enemies in §x{x}§7 blocks radius, then leaps 8 blocks if has wind charge

@@ -1,0 +1,14 @@
+{
+    "ui_defs": [
+        "ui/rarity_and_stats_panel.json",
+        "ui/reforge_anvil_menu_screen.json",
+        "ui/upgrade_stats_menu_screen.json",
+        "ui/heavy_anvil_menu_screen.json",
+        "ui/divine_forge_menu_screen.json",
+        "ui/upgrade_divine_stats_menu_screen.json",
+        "ui/divine_stats_upgrade_new_menu_screen.json",
+        "ui/divine_ascending_menu_screen.json",
+        "ui/upgrade_divine_power_menu_screen.json",
+        "ui/signature_weapons_menu_screen.json"
+    ]
+}
