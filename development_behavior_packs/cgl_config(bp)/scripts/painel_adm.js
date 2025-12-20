@@ -23,7 +23,7 @@ system.run(() =>{
                     case 1:
                         source.setGameMode(GameMode.Survival)
                         break;
-                    case 3:
+                    case 2:
                         source.setGameMode(GameMode.Spectator)
                         world.seendMessage("Você mudrou para espectador  " + source.getGameMode());
                         break;
