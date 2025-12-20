@@ -4,6 +4,7 @@ import { ActionFormData, ModalFormData} from "@minecraft/server-ui"
 system.runInterval(() =>{
     const adm_painel =  new ActionFormData();
     adm_painel.title("teste")
+    adm_painel.label("teste2")
     adm_painel.button("criativo")
     adm_painel.button("survival")
     adm_painel.button("espectador")
