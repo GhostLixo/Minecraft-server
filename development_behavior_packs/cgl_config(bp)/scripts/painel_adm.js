@@ -10,7 +10,7 @@ system.runInterval(() =>{
 
     world.afterEvents.itemUse.subscribe((ev) =>{
         const {itemStack, source} = ev
-        if (itemStack.typeId == "minecraft:compass" && source.addTag("adm")) {
+        if (itemStack.typeId == "minecraft:compass" && source.hasTag("adm")) {
             adm_painel.show(source).then((resutado) =>{
                 if (resutado.canceled) {
                     source.sendMessage("vc saiu do painel")
