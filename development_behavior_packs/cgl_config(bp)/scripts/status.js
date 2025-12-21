@@ -5,6 +5,6 @@ system.runInterval(() =>{
 
     for (const jogador of world.getAllPlayers()) {
         const manaScore = mana_scoreboard.getScore(jogador);
-        jogador.onScreenDisplay.setTitle(`${manaScore}`)
+        jogador.onScreenDisplay.setTitle(`teste123`)
     }
 });
