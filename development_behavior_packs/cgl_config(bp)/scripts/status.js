@@ -24,9 +24,7 @@ system.runInterval(() =>{
         }
 
         const vida_score = jogador.getComponent("health")
-        jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue}\nmana 
-            ${mn_score}\n
-            ${stm_score}
+        jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue}\nmana ${mn_score}\n${stm_score}
             `)
     }
 });
