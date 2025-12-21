@@ -7,7 +7,8 @@ world.afterEvents.playerJoin.subscribe((ev) => {
       for (let keyl of world.getAllPlayers()) {
         if (keyl.id === jugador) {
           keyl.onScreenDisplay.setTitle("§l§aSeja bem-vindo!" +  ev.playerName);
-          world.sendMessage("Bem vindxo " + ev.playerName);
+          world.sendMessage("Bem vindo " + ev.playerName);
+          
             }
         }
 

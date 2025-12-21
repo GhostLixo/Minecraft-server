@@ -10,7 +10,7 @@ system.runInterval(() =>{
         const stm_score = estamina_scoreboard.getScore(jogador) ?? 0
         const mn_score = mana_scoreboard.getScore(jogador) ?? 0
          if (jogador.isSprinting ){
-            if(stm_score > 0) {
+            if(stm_score > 0) { //stm_score é a estamina
                 estamina_scoreboard.addScore(jogador, -1)
             }   
         }
@@ -21,8 +21,9 @@ system.runInterval(() =>{
         }
         if (stm_score == 0) {
             jogador.inputPermissions.setPermissionCategory(2, false)
-        } else id (stm_score == 100) {
+        } else if (stm_score <= 10) {
             jogador.inputPermissions.setPermissionCategory(2, true)
+            console.log("cansado");
         }
 
         const vida_score = jogador.getComponent("health")

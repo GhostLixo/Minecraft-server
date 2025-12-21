@@ -3,11 +3,12 @@ import { ActionFormData, ModalFormData} from "@minecraft/server-ui"
 
 system.run(() =>{
     const adm_painel =  new ActionFormData();
-    adm_painel.title("")
-    adm_painel.label("Painel de administração")
-    adm_painel.button("criativo")
-    adm_painel.button("survival")
-    adm_painel.button("espectador")
+    adm_painel.title("");
+    adm_painel.label("Painel de administração");
+    adm_painel.button("criativo");
+    adm_painel.button("survival");
+    adm_painel.button("espectador");
+    adm_painel.button("ficar Invisivel");
 
     world.afterEvents.itemUse.subscribe((ev) =>{
         const {itemStack, source} = ev
@@ -26,6 +27,9 @@ system.run(() =>{
                     case 2:
                         source.setGameMode(GameMode.Spectator)
                         world.seendMessage("Você mudrou para espectador  " + source.getGameMode());
+                        break;
+                    case 3:
+                        source.addEffect("invisibility", 1, true);
                         break;
                 }
             })
