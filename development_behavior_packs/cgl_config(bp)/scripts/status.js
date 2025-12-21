@@ -12,6 +12,7 @@ system.runInterval(() =>{
          if (jogador.isSprinting ){
             if(stm_score > 0) {
                 estamina_scoreboard.addScore(jogador, -1)
+                jogador.inputPermissions.setPermissionCategory(2, true)
             }   
         }
         else if (!jogador.isSprinting) {
