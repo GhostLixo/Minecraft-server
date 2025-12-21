@@ -34,11 +34,6 @@
         {
             "module_name": "@minecraft/server-ui",
             "version": "2.0.0"
-        },
-        {
-            "module_name": "@minecraft/vanilla-data",
-            "version": "1.21.0",
-            "uuid": "769e38f1-e8d1-4475-802c-474e64f78330"
         }
     ]
 }
