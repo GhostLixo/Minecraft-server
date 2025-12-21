@@ -4,7 +4,7 @@ system.runInterval(() =>{
      const mana_scoreboard = world.scoreboard.getObjective("mana")
 
     for (const jogador of world.getAllPlayers()) {
-        const vida_score = jogador.getComponents("health")
+        const vida_score = jogador.getComponent("health")
         jogador.onScreenDisplay.setActionBar(`vida ${vida_score.currentValue}\nmana ${mana_scoreboard.getScore(jogador)}`)
     }
 });
