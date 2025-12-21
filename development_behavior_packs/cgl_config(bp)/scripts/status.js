@@ -1,6 +1,7 @@
 import { world, system } from "@minecraft/server"
 
 system.runInterval(() =>{
-   console.warn("teste");
-   
+    world.afterEvents.playerJoin.subscribe(() => {
+        console.warn("teste");
+    })
 });
