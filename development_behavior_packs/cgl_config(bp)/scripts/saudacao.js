@@ -10,9 +10,7 @@ world.afterEvents.playerJoin.subscribe((ev) => {
         if (keyl.id === jugador) {
           estamina_scoreboard.setScore(keyl, 0) ?? 0
           mana_scoreboard.setScore(keyl, 0) ?? 0
-          keyl.onScreenDisplay.setTitle("§l§aSeja bem-vindo!\n" +  ev.playerName);
-          world.sendMessage("Bem vindo " + ev.playerId);
-          world.sendMessage("Bem vindxo " + ev.playerName);
+          keyl.onScreenDisplay.setTitle("§lSeja bem-vindo!\n");
             }
         }
 
