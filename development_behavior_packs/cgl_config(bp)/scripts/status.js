@@ -12,7 +12,6 @@ system.runInterval(() =>{
          if (jogador.isSprinting ){
             if(stm_score > 0) {
                 estamina_scoreboard.addScore(jogador, -1)
-                jogador.inputPermissions.setPermissionCategory(2, true)
             }   
         }
         else if (!jogador.isSprinting) {
@@ -22,6 +21,8 @@ system.runInterval(() =>{
         }
         if (stm_score == 0) {
             jogador.inputPermissions.setPermissionCategory(2, false)
+        } else id (stm_score == 100) {
+            jogador.inputPermissions.setPermissionCategory(2, true)
         }
 
         const vida_score = jogador.getComponent("health")
