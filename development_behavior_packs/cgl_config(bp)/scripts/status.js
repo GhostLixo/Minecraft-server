@@ -20,7 +20,7 @@ system.runInterval(() =>{
             }
         }
         if (stm_score == 0) {
-            jogador.addEffect(MinecraftEffectTypes.Slowness, 20, {amplifier : 100})
+            jogador.inputPermissions.setPermissionCategory(2, false)
         }
 
         const vida_score = jogador.getComponent("health")
