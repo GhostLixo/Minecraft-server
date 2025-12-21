@@ -14,9 +14,10 @@
                 player.applyKnockback(ViewDirection, ViewDirection.y)
                 dash_scoreboard.addScore(player, -1)
         }
-        } else {
-            dash_scoreboard.setScore(player, dash_max_score)
+        } 
         }
+        if(player.isOnGround) {
+            dash_scoreboard.setScore(player, dash_max_score)
         }
     })  
  });
