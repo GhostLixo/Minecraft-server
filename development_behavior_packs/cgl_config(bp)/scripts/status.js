@@ -5,6 +5,6 @@ system.runInterval(() =>{
 
     for (const jogador of world.getAllPlayers()) {
         const vida_score = jogador.getComponent("health")
-        jogador.onScreenDisplay.setActionBar(`vida ${vida_score.currentValue}\nmana ${mana_scoreboard.getScore(jogador)}`)
+        jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue}\nmana ${mana_scoreboard.getScore(jogador)}`)
     }
 });
