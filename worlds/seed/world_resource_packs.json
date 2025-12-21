@@ -9,5 +9,11 @@
       1,
       21,
       131
-    ]}
+    ]},
+    {
+        "name": "My Resource Pack",
+        "pack_id": "f792a765-6eec-47e1-baea-599424fec93d",
+        "version": [1, 0, 0],
+        "min_engine_version": [1, 21, 0]
+    }
 ]
