@@ -26,10 +26,9 @@ system.run(() =>{
                         break;
                     case 2:
                         source.setGameMode(GameMode.Spectator)
-                        world.seendMessage("Você mudrou para espectador  " + source.getGameMode());
                         break;
                     case 3:
-                        source.addEffect("invisibility", 1, true);
+                        source.runCommand("effect @s invisibility infinite 1 true");
                         break;
                 }
             })

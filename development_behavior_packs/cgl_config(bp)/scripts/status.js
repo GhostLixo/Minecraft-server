@@ -2,7 +2,6 @@ import { world, system, EffectType } from "@minecraft/server"
 import {MinecraftEffectTypes} from "./vanilla-data"
 
 system.runInterval(() =>{
-
      const mana_scoreboard = world.scoreboard.getObjective("mana")
      const estamina_scoreboard = world.scoreboard.getObjective("estamina")
     //sistema de interfaca do status
@@ -15,7 +14,7 @@ system.runInterval(() =>{
             }   
         }
         else if (!jogador.isSprinting) {
-             if (stm_score < 100) {
+             if (stm_score < 200) {
                 estamina_scoreboard.addScore(jogador, 1)
             }
         }
