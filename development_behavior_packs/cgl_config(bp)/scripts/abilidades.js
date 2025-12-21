@@ -8,7 +8,8 @@
         const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
         if(!player.isOnGround) {
             if(player.isJumping && dash_score > 0) {
-                player.applyKnockback(player.getViewDirection().x, player.getViewDirection().z, 1.5)
+                const ViewDirection = player.getViewDirection()
+                player.applyKnockback(ViewDirection, ViewDirection.y)
                 dash_scoreboard.addScore(player, -1)
         }
         } else {
