@@ -22,9 +22,9 @@ system.runInterval(() =>{
         if (stm_score == 0) {
             console.log("cansado");
             jogador.inputPermissions.setPermissionCategory(2, false)
-        } else if (stm_score == 10) {
-            jogador.inputPermissions.setPermissionCategory(2, true)
-            
+        } 
+        if (stm_score == 10) {
+            jogador.inputPermissions.setPermissionCategory(2, true)    
         }
 
         const vida_score = jogador.getComponent("health")
