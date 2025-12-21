@@ -1,10 +1,31 @@
-import { world, system } from "@minecraft/server"
+import { world, system, EffectType } from "@minecraft/server"
+import {MinecraftEffectTypes} from "@minecraft/vanilla-data"
 
 system.runInterval(() =>{
-     const mana_scoreboard = world.scoreboard.getObjective("mana")
 
+     const mana_scoreboard = world.scoreboard.getObjective("mana")
+     const estamina_scoreboard = world.scoreboard.getObjective("estamina")
+    //sistema de interfaca do status
     for (const jogador of world.getAllPlayers()) {
+        const str_score = estamina_scoreboard.getScore(jogador) ?? 0
+         if (jogador.isSprinting ){
+            if(str_score > 0) {
+                estamina_scoreboard.addScore(jogador, -1)
+            }   
+        }
+        else if (!jogador.isSprinting) {
+             if (str_score < 100) {
+                estamina_scoreboard.addScore(jogador, 1)
+            }
+        }
+        if (str_score == 0) {
+            jogador.addEffect(MinecraftEffectTypes.Slowness, 20, {amplifier : 100})
+        }
+
         const vida_score = jogador.getComponent("health")
-        jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue}\nmana ${mana_scoreboard.getScore(jogador)}`)
+        jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue}\nmana 
+            ${mana_scoreboard.getScore(jogador)}\n
+            ${estamina_scoreboard.getScore(jogador)}
+            `)
     }
 });
