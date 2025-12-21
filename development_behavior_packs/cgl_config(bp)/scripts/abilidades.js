@@ -16,8 +16,11 @@
         }
         } 
         }
+    })
+    for (const player of world.getAllPlayers) {
         if(player.isOnGround) {
             dash_scoreboard.setScore(player, dash_max_score)
         }
-    })  
+    }
+    
  });
