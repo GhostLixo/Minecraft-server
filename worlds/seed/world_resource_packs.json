@@ -11,8 +11,14 @@
       131
     ]},
     {
-        "name": "My Resource Pack",
-        "pack_id": "f792a765-6eec-47e1-baea-599424fec93d",
+        "name": "Emoji Craft (1.21.0)",
+		"description": "Adds an easy way to use emojis in chat & on signs! To see every emoji & how to use them say “#emojis” or “#custom emojis” in chat. There are currently §l81 vanilla emojis§r & §l15 custom emojis§r included in this add-on.",
+		"min_engine_version": [
+			1,
+			21,
+			0
+		],
+        "pack_id": "23524424-8b04-4651-80bc-537214c08ce4",
         "version": [1, 0, 0],
         "min_engine_version": [1, 21, 0]
     }
