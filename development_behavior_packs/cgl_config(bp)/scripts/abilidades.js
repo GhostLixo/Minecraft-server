@@ -19,6 +19,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
 
 system.runInterval(()=>{
      const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
+     const dash_scoreboard = world.scoreboard.getObjective("dash")
     for (const player of world.getAllPlayers()) {
         const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
         if(player.isOnGround) {
