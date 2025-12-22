@@ -16,7 +16,7 @@
         } 
         }
     })
-    for (const player of world.getAllPlayers) {
+    for (const player of world.getAllPlayers()) {
         const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
         if(player.isOnGround) {
             dash_scoreboard.setScore(player, dash_max_score)
