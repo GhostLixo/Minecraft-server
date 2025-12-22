@@ -17,6 +17,7 @@ system.runInterval(()=>{
      const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
      const dash_scoreboard = world.scoreboard.getObjective("dash")
     for (const player of world.getAllPlayers()) {
+        const dash_score = dash_scoreboard.getScore(player) ?? 0
         const ViewDirection = player.getViewDirection()
     if (dash_score == 0) {
         player.applyKnockback(ViewDirection, ViewDirection.y)
