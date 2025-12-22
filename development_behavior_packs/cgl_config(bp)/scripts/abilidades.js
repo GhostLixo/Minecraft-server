@@ -4,8 +4,8 @@
     const dash_scoreboard = world.scoreboard.getObjective("dash")
     const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
     world.afterEvents.playerButtonInput.subscribe((ev) =>{
-        const dash_score = dash_scoreboard.getScore(player) ?? 0
         const {player, button, newButtonState} = ev
+        const dash_score = dash_scoreboard.getScore(player) ?? 0
         if (button === InputButton.Jump && newButtonState === ButtonState.Released) {
             if(!player.isOnGround) {
             if(dash_score > 0) {
@@ -16,7 +16,7 @@
         } 
         }
     })
-    for (const player of world.getAllPlayers) {
+    for (const player of world.getAllPlayers()) {
         const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
         if(player.isOnGround) {
             dash_scoreboard.setScore(player, dash_max_score)
