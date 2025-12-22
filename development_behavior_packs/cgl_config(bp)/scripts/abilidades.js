@@ -15,6 +15,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
     }
         if(dash_score > 0) {
             double_jump_scoreboard.addScore(player, -1)
+            console.log("Double Jump ativado");
         }
         }
     })
@@ -28,7 +29,7 @@ system.runInterval(()=>{
         if(player.isOnGround) {
             dash_scoreboard.setScore(player, dash_max_score)
             dash_scoreboard.setScore(player, 2)
-            
+            console.log("Recarregando dash");
     }
 
 }
