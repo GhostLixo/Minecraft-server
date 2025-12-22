@@ -1,9 +1,11 @@
  import {world,  system, InputButton, ButtonState} from "@minecraft/server"
  // double_jump_scoreboard do player = 2]
-
+system.run(()=>{
 const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
 const double_jump_scoreboard = world.scoreboard.getObjective("double_jump")
 const dash_scoreboard = world.scoreboard.getObjective("dash")
+})
+
 
 world.afterEvents.playerButtonInput.subscribe((ev) =>{
 
