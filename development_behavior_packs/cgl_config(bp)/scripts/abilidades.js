@@ -18,7 +18,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
         }
         if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && double_jump_score === 0 && dash_score > 0) {
             //funçao de dash
-            player.applyKnockback(ViewDirection, ViewDirection.y)
+            player.applyKnockback(ViewDirection * 1.5, ViewDirection.y)
             dash_scoreboard.addScore(player, -1)
         }  
     }
