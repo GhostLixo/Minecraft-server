@@ -34,7 +34,7 @@ system.runInterval(()=>{
         if(player.isOnGround) {
 
             dash_scoreboard.setScore(player, dash_max_score)
-            double_jump_scoreboard.setScore(player, 2)
+            double_jump_scoreboard.setScore(player, 1)
             
     }
 
