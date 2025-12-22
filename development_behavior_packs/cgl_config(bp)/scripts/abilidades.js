@@ -9,7 +9,9 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
     if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && !player.isOnGround) {
         if(dash_score > 0) {
             const ViewDirection = player.getViewDirection()
-            player.applyKnockback(ViewDirection, ViewDirection.y)
+            if (dash_score == 0) {
+                player.applyKnockback(ViewDirection, ViewDirection.y)
+            }
             dash_scoreboard.addScore(player, -1)
         }
         }
