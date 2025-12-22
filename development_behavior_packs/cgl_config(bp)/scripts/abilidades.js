@@ -6,14 +6,12 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
     const dash_scoreboard = world.scoreboard.getObjective("dash")
     const {player, button, newButtonState} = ev
     const dash_score = dash_scoreboard.getScore(player) ?? 0
-    if (button === InputButton.Jump && newButtonState === ButtonState.Pressed) {
-        if(!player.isOnGround) {
+    if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && !player.isOnGround) {
         if(dash_score > 0) {
             const ViewDirection = player.getViewDirection()
             player.applyKnockback(ViewDirection, ViewDirection.y)
             dash_scoreboard.addScore(player, -1)
         }
-        } 
         }
     })
 
