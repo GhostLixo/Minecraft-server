@@ -22,5 +22,6 @@
             dash_scoreboard.setScore(player, dash_max_score)
         }
     }
+
     
  });
