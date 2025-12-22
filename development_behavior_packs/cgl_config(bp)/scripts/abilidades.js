@@ -13,6 +13,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
     const vetor = { x: ViewDirection.x * 1.6, z: ViewDirection.z * 1.6};
     
     
+    
 
     //verificação se o player apertou o botão de jump
     if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && !player.isOnGround) {
