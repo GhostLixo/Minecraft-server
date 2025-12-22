@@ -1,39 +1,17 @@
 {
 	"format_version": 2,
-	"metadata": {
-		"authors": [
-			"PhosphorusXD"
-		]
-	},
 	"header": {
-		"name": "Emoji Craft (1.21.0)",
-		"description": "Adds an easy way to use emojis in chat & on signs! To see every emoji & how to use them say “#emojis” or “#custom emojis” in chat. There are currently §l81 vanilla emojis§r & §l15 custom emojis§r included in this add-on.",
-		"min_engine_version": [
-			1,
-			21,
-			0
-		],
+		"name": "teste",
+		"description": "teste teste",
+		"min_engine_version": [ 1,21,0 ],
 		"uuid": "23524424-8b04-4651-80bc-537214c08ce4",
-		"version": [
-			1,
-			0,
-			0
-		]
+		"version": [ 1,0,0 ]
+			
 	},
 	"modules": [
 		{
 			"type": "resources",
 			"uuid": "22e1caf5-c610-43a7-acf9-53d67d2e7fea",
-			"version": [
-				1,
-				0,
-				0
-			]
-		}
-	],
-	"dependencies": [
-		{
-			"uuid": "151d0f0c-8b22-417c-95b4-07270eb04885",
 			"version": [
 				1,
 				0,

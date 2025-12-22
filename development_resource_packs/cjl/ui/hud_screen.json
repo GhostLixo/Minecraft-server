@@ -1,0 +1,20 @@
+{
+    "namespace": "hud",
+    "novotexto": {
+        "type": "label",
+        "text": "O texto"
+    },
+    "root_panel": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_front",
+                "value": [
+                    {
+                        "novotexto@hud.novotexto": {}
+                    }
+                ]
+            }
+        ]
+    }
+}

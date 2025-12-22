@@ -22,7 +22,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) => {
         }
     }
 })
-system.run(() => {
+system.runInterval(() => {
     const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
     const double_jump_scoreboard = world.scoreboard.getObjective("double_jump")
     const dash_scoreboard = world.scoreboard.getObjective("dash")

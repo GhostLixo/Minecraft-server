@@ -11,8 +11,7 @@
     {
       "type": "resources",
       "uuid": "c8373f29-038e-4d61-b764-11346a886ac1",
-      "version": [2, 1, 1],
-      "description": "Xiao Sakura Shader Resource Module"
+      "version": [2, 1, 1]
     }
   ],
   "capabilities": [
