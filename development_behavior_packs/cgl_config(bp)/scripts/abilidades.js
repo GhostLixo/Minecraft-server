@@ -8,7 +8,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
 
     const ViewDirection = player.getViewDirection()
 
-
+    const dash_scoreboard = world.scoreboard.getObjective("dash")
     const dash_score = dash_scoreboard.getScore(player) ?? 0
     const double_jump_score = double_jump_scoreboard.getScore(player) ?? 0
     //verificação se o player apertou o botão de jump
@@ -18,7 +18,8 @@ world.afterEvents.playerButtonInput.subscribe((ev) =>{
         }
         if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && double_jump_score === 0 && dash_score > 0) {
             //funçao de dash
-            player.applyKnockback(ViewDirection, ViewDirection.y, 1.5)
+            player.applyKnockback(ViewDirection, ViewDirection.y)
+            dash_scoreboard.addScore(player, -1)
         }  
     }
     })
