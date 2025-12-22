@@ -1,79 +1,41 @@
-import { world, system, InputButton, ButtonState } from "@minecraft/server";
+ import {world,  system, InputButton, ButtonState} from "@minecraft/server"
+ // double_jump_scoreboard do player = 2]
 
-// 1. GATILHO DO DASH (PULO DUPLO)
-world.afterEvents.playerButtonInput.subscribe((ev) => {
-    const { player, button, newButtonState } = ev; // Definido no topo para evitar erro
-    
-    const dash_obj = world.scoreboard.getObjective("dash");
-    const dj_obj = world.scoreboard.getObjective("double_jump");
+const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
+const double_jump_scoreboard = world.scoreboard.getObjective("double_jump")
+const dash_scoreboard = world.scoreboard.getObjective("dash")
 
-    if (!dash_obj || !dj_obj) return;
+world.afterEvents.playerButtonInput.subscribe((ev) =>{
 
-    // Verifica se apertou Pulo e está no ar
+    const {player, button, newButtonState} = ev
+
+    const ViewDirection = player.getViewDirection()
+
+
+    const dash_score = dash_scoreboard.getScore(player) ?? 0
+    const double_jump_score = double_jump_scoreboard.getScore(player) ?? 0
+    //verificação se o player apertou o botão de jump
     if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && !player.isOnGround) {
-<<<<<<< HEAD
-        
-        // Reduz o contador de pulos primeiro
-        dj_obj.addScore(player, -1);
-        const current_dj = dj_obj.getScore(player) ?? 0;
-        const current_dash = dash_obj.getScore(player) ?? 0;
-
-        // Se o score de pulo chegou a 1, significa que é o segundo clique no ar
-        if (current_dj === 1 && current_dash > 0) {
-            const view = player.getViewDirection();
-            
-            // Aplica o impulso (X, Z, Força_H, Força_V)
-            player.applyKnockback(view.x, view.z, 1.5, 0.4);
-            
-            // Consome 1 de combustível de dash
-            dash_obj.addScore(player, -1);
-            
-            // Efeito sonoro opcional
-            player.playSound("mob.enderdragon.flap", { pitch: 1.5 });
-        }
-=======
-        if (double_jump_score == 0 && dash_score > 0) {
-        player.applyKnockback(ViewDirection, ViewDirection.y)
-    }
-        if(dash_score > 0) {
+        if (double_jump_score > 0) {
             double_jump_scoreboard.addScore(player, -1)
-            console.log("Double Jump ativado");
         }
-        }
+        if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && double_jump_score === 0 && dash_score > 0) {
+            //funçao de dash
+            player.applyKnockback(ViewDirection, ViewDirection.y, 1.5)
+        }  
+    }
     })
 
 system.runInterval(()=>{
-    const dash_scoreboard = world.scoreboard.getObjective("dash")
-     const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
+
     for (const player of world.getAllPlayers()) {
-          const dash_score = dash_scoreboard.getScore(player) ?? 0
         const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
         if(player.isOnGround) {
+
             dash_scoreboard.setScore(player, dash_max_score)
-            dash_scoreboard.setScore(player, 2)
-            console.log("Recarregando dash");
->>>>>>> d3410e887e864353dffb4a15b1b54f861e9ba2ec
-    }
-});
-
-// 2. SISTEMA DE RECARGA E RESET
-system.runInterval(() => {
-    const dash_obj = world.scoreboard.getObjective("dash");
-    const max_obj = world.scoreboard.getObjective("dash_max");
-    const dj_obj = world.scoreboard.getObjective("double_jump");
-
-    if (!dash_obj || !max_obj || !dj_obj) return;
-
-    for (const player of world.getAllPlayers()) {
-        if (player.isOnGround) {
-            const maxVal = max_obj.getScore(player) ?? 1;
+            double_jump_scoreboard.setScore(player, 2)
             
-            // Reseta o combustível para o valor máximo definido no score
-            dash_obj.setScore(player, maxVal);
-            
-            // Reseta o contador de pulo duplo para 2
-            // (2 = Pode pular / 1 = Dash disponível / 0 = Já usou tudo)
-            dj_obj.setScore(player, 2);
-        }
     }
-}, 5);
+
+}
+ });
