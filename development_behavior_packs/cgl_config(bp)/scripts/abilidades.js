@@ -11,7 +11,6 @@ world.afterEvents.playerButtonInput.subscribe((ev) => {
 
     // Verifica se apertou Pulo e está no ar
     if (button === InputButton.Jump && newButtonState === ButtonState.Pressed && !player.isOnGround) {
-<<<<<<< HEAD
         
         // Reduz o contador de pulos primeiro
         dj_obj.addScore(player, -1);
@@ -31,28 +30,6 @@ world.afterEvents.playerButtonInput.subscribe((ev) => {
             // Efeito sonoro opcional
             player.playSound("mob.enderdragon.flap", { pitch: 1.5 });
         }
-=======
-        if (double_jump_score == 0 && dash_score > 0) {
-        player.applyKnockback(ViewDirection, ViewDirection.y)
-    }
-        if(dash_score > 0) {
-            double_jump_scoreboard.addScore(player, -1)
-            console.log("Double Jump ativado");
-        }
-        }
-    })
-
-system.runInterval(()=>{
-    const dash_scoreboard = world.scoreboard.getObjective("dash")
-     const dash_max_scoreboard = world.scoreboard.getObjective("dash_max")
-    for (const player of world.getAllPlayers()) {
-          const dash_score = dash_scoreboard.getScore(player) ?? 0
-        const dash_max_score = dash_max_scoreboard.getScore(player) ?? 0
-        if(player.isOnGround) {
-            dash_scoreboard.setScore(player, dash_max_score)
-            dash_scoreboard.setScore(player, 2)
-            console.log("Recarregando dash");
->>>>>>> d3410e887e864353dffb4a15b1b54f861e9ba2ec
     }
 });
 
