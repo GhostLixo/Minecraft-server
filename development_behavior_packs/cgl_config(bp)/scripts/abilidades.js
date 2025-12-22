@@ -6,7 +6,7 @@
     world.afterEvents.playerButtonInput.subscribe((ev) =>{
         const {player, button, newButtonState} = ev
         const dash_score = dash_scoreboard.getScore(player) ?? 0
-        if (button === InputButton.Jump && newButtonState === ButtonState.Released) {
+        if (button === InputButton.Jump && newButtonState === ButtonState.Pressed) {
             if(!player.isOnGround) {
             if(dash_score > 0) {
                 const ViewDirection = player.getViewDirection()
