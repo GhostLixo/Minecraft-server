@@ -1,16 +1,13 @@
 [
     {
-        "name": "teste",
-		    "description": "teste teste",
-        "pack_id": "23524424-8b04-4651-80bc-537214c08ce4",
-        "version": [ 1,0,0 ],
-        "min_engine_version": [ 1,21,0 ]
-    },
+		"pack_id" : "fb270fb0-b527-4231-a8dc-77b1078d8468",
+		"version" : [ 1, 0, 0 ]
+	},
 
     {   
         "name": "§dXiao Sakura Shader",
         "description": "§dA Soft & Realistic Shader for Minecraft bedrock!§r\n§fTurn on §cVibrant Visuals§f in Video Settings to enjoy full effects.\nSubscribe to §dXiaoCraft§f for updates!",
-		    "version": [2, 1, 1],
+		 "version": [2, 1, 1],
         "pack_id": "e9a6d909-c72b-4eca-b716-14c0f2f6a4a0",
         "min_engine_version": [1, 20, 90] 
     }

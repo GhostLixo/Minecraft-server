@@ -1,0 +1,42 @@
+{
+	"format_version": 2,
+	"metadata": {
+	"authors": ["merlo44"]
+	},
+	"header": {
+		"name": "config(RP)",
+		"description": "addon by merlo44",
+		"min_engine_version": [
+			1,
+			21,
+			130
+		],
+		"uuid": "fb270fb0-b527-4231-a8dc-77b1078d8468",
+		"version": [
+			1,
+			0,
+			0
+		]
+	},
+	"modules": [
+		{
+			"type": "resources",
+			"uuid": "e25cccee-9258-41f9-adc3-7e0ff196742e",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	],
+	"dependencies": [
+		{
+			"uuid": "e5145c36-5878-48d2-ba19-396025faa072",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	]
+}
