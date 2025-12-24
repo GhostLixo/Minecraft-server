@@ -2,7 +2,8 @@
     "namespace": "hud",
     "novotexto": {
         "type": "label",
-        "text": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+        "text": "extsdfsdfsdfesfdsfo"
+        
     },
     "root_panel": {
         "modifications": [
@@ -18,3 +19,5 @@
         ]
     }
 }
+
+

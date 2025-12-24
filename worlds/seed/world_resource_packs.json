@@ -7,7 +7,7 @@
     {   
         "name": "§dXiao Sakura Shader",
         "description": "§dA Soft & Realistic Shader for Minecraft bedrock!§r\n§fTurn on §cVibrant Visuals§f in Video Settings to enjoy full effects.\nSubscribe to §dXiaoCraft§f for updates!",
-		 "version": [2, 1, 1],
+		"version": [2, 1, 1],
         "pack_id": "e9a6d909-c72b-4eca-b716-14c0f2f6a4a0",
         "min_engine_version": [1, 20, 90] 
     }
