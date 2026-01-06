@@ -2,9 +2,14 @@
     "namespace": "hud",
     "novotexto": {
         "type": "label",
-        "text": "extsdfsdfsdfesfdsfo"
+        "text": "eertsfo"
         
     },
+    "imagem":{
+        "type": "image",
+        "texture": "textures/ui/Black"
+    },
+
     "root_panel": {
         "modifications": [
             {
@@ -13,6 +18,9 @@
                 "value": [
                     {
                         "novotexto@hud.novotexto": {}
+                    },
+                    {   
+                        "imagem@hud.imagem": {}
                     }
                 ]
             }
