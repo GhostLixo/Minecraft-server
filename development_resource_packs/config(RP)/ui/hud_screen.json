@@ -9,7 +9,10 @@
         "type": "image",
         "texture": "textures/ui/Black"
     },
-
+    "imagemm":{
+        "type": "image",
+        "texture": "textures/ui/White"
+    },
     "root_panel": {
         "modifications": [
             {
@@ -21,6 +24,9 @@
                     },
                     {   
                         "imagem@hud.imagem": {}
+                    }, 
+                    {   
+                        "imagemm@hud.imagemm": {}
                     }
                 ]
             }
