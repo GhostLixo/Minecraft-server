@@ -1,5 +1,4 @@
-import { world, system, EffectType } from "@minecraft/server"
-import {MinecraftEffectTypes} from "./vanilla-data"
+import { world, system} from "@minecraft/server"
 
 system.runInterval(() =>{
      const mana_scoreboard = world.scoreboard.getObjective("mana")

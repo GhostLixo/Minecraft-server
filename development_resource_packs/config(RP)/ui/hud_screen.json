@@ -1,37 +1,5 @@
 {
-    "namespace": "hud",
-    "novotexto": {
-        "type": "label",
-        "text": "eertsfo"
-        
-    },
-    "imagem":{
-        "type": "image",
-        "texture": "textures/ui/Black"
-    },
-    "imagemm":{
-        "type": "image",
-        "texture": "textures/ui/White"
-    },
-    "root_panel": {
-        "modifications": [
-            {
-                "array_name": "controls",
-                "operation": "insert_front",
-                "value": [
-                    {
-                        "novotexto@hud.novotexto": {}
-                    },
-                    {   
-                        "imagem@hud.imagem": {}
-                    }, 
-                    {   
-                        "imagemm@hud.imagemm": {}
-                    }
-                ]
-            }
-        ]
-    }
+    
 }
 
 

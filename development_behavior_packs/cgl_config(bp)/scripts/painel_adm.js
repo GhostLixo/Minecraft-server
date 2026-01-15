@@ -1,8 +1,9 @@
 import { world, system, GameMode } from "@minecraft/server"
-import { ActionFormData, ModalFormData} from "@minecraft/server-ui"
+import { ActionFormData } from "@minecraft/server-ui"
 
-system.run(() =>{
-    const adm_painel =  new ActionFormData();
+world.afterEvents.itemUse.subscribe((ev) => {
+    const { itemStack, source } = ev;
+    const adm_painel = new ActionFormData();
     adm_painel.title("");
     adm_painel.label("Painel de administração");
     adm_painel.button("criativo");
@@ -10,28 +11,25 @@ system.run(() =>{
     adm_painel.button("espectador");
     adm_painel.button("ficar Invisivel");
 
-    world.afterEvents.itemUse.subscribe((ev) =>{
-        const {itemStack, source} = ev
-        if (itemStack.typeId == "minecraft:compass" && source.hasTag("adm")) {
-            adm_painel.show(source).then((resutado) =>{
-                if (resutado.canceled) {
-                    source.sendMessage("Você saiu do painel")
-                }
-                switch (resutado.selection) {
-                    case 0:
-                        source.setGameMode(GameMode.Creative)
-                        break;
-                    case 1:
-                        source.setGameMode(GameMode.Survival)
-                        break;
-                    case 2:
-                        source.setGameMode(GameMode.Spectator)
-                        break;
-                    case 3:
-                        source.runCommand("effect @s invisibility infinite 1 true");
-                        break;
+    
+    if (itemStack.typeId == "minecraft:compass" && source.hasTag("adm")) {
+        system.run(() => {
+            adm_painel.show(source).then((resutado) => {
+            switch (resutado.selection) {
+                case 0:
+                    source.setGameMode(GameMode.Creative);
+                    break;
+                case 1:
+                    source.setGameMode(GameMode.Survival);
+                    break;
+                case 2:
+                    source.setGameMode(GameMode.Spectator);
+                    break;
+                case 3:
+                    source.runCommand("effect @s invisibility infinite 1 true");
+                    break;
                 }
             })
-        } 
-    })
+        });
+    }
 })
