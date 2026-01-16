@@ -7,4 +7,4 @@ system.runInterval(() =>{
             animal.nameTag = `${animal.typeId.replace("minecraft:", "")}\n ${vida_score.currentValue.toFixed(1)}`
         }
     }
-})
+}, 30);

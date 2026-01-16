@@ -29,3 +29,9 @@ system.runInterval(() =>{
             `)
     }
 });
+system.runInterval(() => {
+    let agora = new Date(); let minuto = agora.getMinutes().toString().padStart(2, "0"); let hora = agora.getHours() -3;
+    let horaFormatada = `${hora.toString().padStart(2, "0")}:${minuto}`;
+    world.sendMessage("Hora " + horaFormatada);
+    console.log("Hora " + horaFormatada);
+}, 950);
