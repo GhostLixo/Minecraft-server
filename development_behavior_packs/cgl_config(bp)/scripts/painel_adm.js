@@ -3,7 +3,7 @@ import { ActionFormData } from "@minecraft/server-ui"
 
 world.afterEvents.itemUse.subscribe((ev) => {
     const { itemStack, source } = ev;
-    const adm_painel = new ActionFormData();
+    let adm_painel = new ActionFormData();
     adm_painel.title("");
     adm_painel.label("Painel de administração");
     adm_painel.button("criativo");
@@ -15,6 +15,9 @@ world.afterEvents.itemUse.subscribe((ev) => {
     if (itemStack.typeId == "minecraft:compass" && source.hasTag("adm")) {
         system.run(() => {
             adm_painel.show(source).then((resutado) => {
+                if (resutado.canceled) {
+                    adm_painel = null;
+                }
             switch (resutado.selection) {
                 case 0:
                     source.setGameMode(GameMode.Creative);
