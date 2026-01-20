@@ -1,20 +1,21 @@
-import { world, system} from "@minecraft/server"
+import { world } from "@minecraft/server"
 export function statusSistema() {
-     const mana_scoreboard = world.scoreboard.getObjective("mana");
-     const estamina_scoreboard = world.scoreboard.getObjective("estamina");
+    const mana_scoreboard = world.scoreboard.getObjective("mana");
+    const estamina_scoreboard = world.scoreboard.getObjective("estamina");
     //sistema de interfaca do status
     for (const jogador of world.getAllPlayers()) {
         const stm_score = estamina_scoreboard.getScore(jogador) ?? 0;
         const mn_score = mana_scoreboard.getScore(jogador) ?? 0;
-         if (jogador.isSprinting ){
-            if(stm_score > 0) { //stm_score é a estamina
-                estamina_scoreboard.addScore(jogador, -1);
-            }   
-        }
-        else if (!jogador.isSprinting) {
-             if (stm_score < 200) {
+
+        if (!jogador.isSprinting ){
+            if (stm_score < 200) {
                 estamina_scoreboard.addScore(jogador, 1);
             }
+        }
+        else if (jogador.isSprinting) {
+            if(stm_score > 0) { //stm_score é a estamina
+                estamina_scoreboard.addScore(jogador, -1);
+            }  
         }
         if (stm_score == 0) {
             jogador.inputPermissions.setPermissionCategory(2, false);
@@ -27,6 +28,4 @@ export function statusSistema() {
         jogador.onScreenDisplay.setActionBar(` ${vida_score.currentValue.toFixed(1)}\nmana ${mn_score}\n${stm_score}
             `);
     }
-    console.log("Sistema de status rodando...");
-
 }
