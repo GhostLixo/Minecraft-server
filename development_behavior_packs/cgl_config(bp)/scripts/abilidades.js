@@ -34,4 +34,4 @@ system.runInterval(() => {
             double_jump_scoreboard.setScore(player, 1);
         }
     }
-});
+}), 19;

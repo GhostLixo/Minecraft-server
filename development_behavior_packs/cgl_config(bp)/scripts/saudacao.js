@@ -7,13 +7,16 @@ let descansarRelogio = undefined, // Variavel para encerrar o loop do relogio qu
     descansarAnimalStatus = undefined; // Variavel para encerrar o loop do status dos mobs quando não tiver ninguem online
 
 world.afterEvents.playerJoin.subscribe((ev) => {
+    const mana_scoreboard = world.scoreboard.getObjective("mana");
+    const estamina_scoreboard = world.scoreboard.getObjective("estamina");
+    
+    
     system.runTimeout(() => {
-        const mana_scoreboard = world.scoreboard.getObjective("mana");
-        const estamina_scoreboard = world.scoreboard.getObjective("estamina");
-        const jugador = world.getAllPlayers().filter((player) => player.id === ev.playerId); // Retorna apenas uma posição de array do objeto player
+            const jugador = world.getAllPlayers().filter((player) => player.id === ev.playerId); // Retorna apenas uma posição de array do objeto player
+            
+            mana_scoreboard?.setScore(jugador[0], 200);
+            estamina_scoreboard?.setScore(jugador[0], 200);
             jugador[0].onScreenDisplay.setTitle("§aSeja bem-vindo!\n");
-            mana_scoreboard?.setScore(jugador[0], 0);
-            estamina_scoreboard?.setScore(jugador[0], 0);
         
 
     //               codigo legado
@@ -25,7 +28,7 @@ world.afterEvents.playerJoin.subscribe((ev) => {
     //         }
     //     }
     console.log("Jogador entrou no servidor.");
-    },TicksPerSecond * 8);// O timer é importante para garantir o objeto player, se vir antes da hora da erro
+    },TicksPerSecond * 7);// O timer é importante para garantir o objeto player, se vir antes da hora da erro
 
 
 //                   Relogio que mostra a hora no chat
@@ -36,7 +39,7 @@ world.afterEvents.playerJoin.subscribe((ev) => {
         horaFormatada = `${VariavelHora.toString().padStart(2, "0")}:${variavelMinuto}`;
      world.sendMessage("Hora " + horaFormatada);
      console.log("Hora " + horaFormatada);
-}, 950);
+}, 1000);
 
 
 //                  Sistema de status importada

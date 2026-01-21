@@ -8,7 +8,7 @@ export function statusSistema() {
         const mn_score = mana_scoreboard.getScore(jogador) ?? 0;
 
         if (!jogador.isSprinting ){
-            if (stm_score < 200) {
+            if (stm_score < 400) {
                 estamina_scoreboard.addScore(jogador, 1);
             }
         }
