@@ -12,7 +12,7 @@ world.afterEvents.playerJoin.subscribe((ev) => {
     
     
     system.runTimeout(() => {
-            const jugador = world.getAllPlayers().filter((player) => player.id === ev.playerId); // Retorna apenas uma posição de array do objeto player
+            const jugador = world.getAllPlayers().filter((player) => player.id == ev.playerId); // Retorna apenas uma posição de array do objeto player
             
             mana_scoreboard?.setScore(jugador[0], 200);
             estamina_scoreboard?.setScore(jugador[0], 200);
@@ -27,11 +27,11 @@ world.afterEvents.playerJoin.subscribe((ev) => {
     //       keyl.onScreenDisplay.setTitle("§aSeja bem-vindo!\n");
     //         }
     //     }
-    console.log("Jogador entrou no servidor.");
-    },TicksPerSecond * 7);// O timer é importante para garantir o objeto player, se vir antes da hora da erro
+    console.log("Jogador entrou no servidor. " + jugador.length );
+    },TicksPerSecond * 7);// O Timer é importante para garantir o objeto player, se vir antes da hora da erro
 
 
-//                   Relogio que mostra a hora no chat
+//         Relogio que mostra a hora no chat
      descansarRelogio = system.runInterval(() => {
      const relogio = new Date(),
         variavelMinuto = relogio.getMinutes().toString().padStart(2, "0"),
@@ -42,8 +42,8 @@ world.afterEvents.playerJoin.subscribe((ev) => {
 }, 1000);
 
 
-//                  Sistema de status importada
-//                  Sistema de vida dos mobs importada
+//         Sistema de status importada
+//         Sistema de vida dos mobs importada
      descansarStatus = system.runInterval(() => { statusSistema()});
      descansarAnimalStatus = system.runInterval(() => { Mostrar_vida_do_mob();}, 30);
 });
