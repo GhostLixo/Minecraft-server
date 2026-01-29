@@ -1,27 +1,24 @@
 import { world, system} from "@minecraft/server"
-const Area_quadrada = { 
-    x: 200,       y: 100,      z: 236
-    
-};
-const Area_quadrada1 = {
+const Area_quadradaMinima = {
     x: 60,      y: 60,     z: 155
 };
+const Area_quadradaMaxima = { 
+    x: 200,       y: 100,      z: 236
+};
+
 
 
 world.beforeEvents.playerBreakBlock.subscribe((ev) => {
     
-    const bloco = ev.player.getHeadLocation();
-    if ( bloco.x >= Area_quadrada.x && bloco.x <= Area_quadrada1.x &&
-         bloco.y >= Area_quadrada.y && bloco.y <= Area_quadrada1.y &&
-         bloco.z >= Area_quadrada.z && bloco.z <= Area_quadrada1.z ) {
-            Area_quadrada.z
-        ev.cancel = true;
-        ev.player.sendMessage("Você não pode quebrar blocos nesta área!");
+    const bloco = ev.player.getHeadLocation(); // A posição do jogador tem varias casas decimais kkkkkk
+    if ( Math.floor(bloco.x) >= Area_quadradaMinima.x && Math.floor(bloco.x) <= Area_quadradaMaxima.x &&
+         Math.floor(bloco.y) >= Area_quadradaMinima.y && Math.floor(bloco.y) <= Area_quadradaMaxima.y &&
+         Math.floor(bloco.z) >= Area_quadradaMinima.z && Math.floor(bloco.z) <= Area_quadradaMaxima.z ) 
+        {
+            ev.cancel = true;
+            ev.player.sendMessage("Você não pode");
     }
-    else{
-        world.sendMessage("Bloco quebrado fora da area protegida.");
-        ev.cancel = true;
-    }
+    
 
 });
 //Contador de kills
