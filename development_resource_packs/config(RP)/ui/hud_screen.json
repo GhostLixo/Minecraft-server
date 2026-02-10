@@ -1,5 +1,31 @@
 {
+    "namespace": "hud",
+    "texto_server":{
+        "type": "label",
+        "text": "Server",
+        "offset": [
+            12.059999999999999,
+            36.934999999999995],
+          "layer": 3,
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "font_scale_factor": 0.576,
+          "text_alignment": "left",
+          "shadow": false
+    },
     
+    "root_panel": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_front",
+                "value": [
+                    {
+                        "texto_Server@hud.texto_server": {}
+                    }
+                ]
+            }
+        ]
+    }
 }
-
 

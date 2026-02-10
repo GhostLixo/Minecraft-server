@@ -1,0 +1,60 @@
+{
+    "format_version": 2,
+    "header": {
+		"name": "§d§l§oKittys Instant ScoreBoard V2.1.2[BP]",
+		"description": "Instant ScoreBoard Resource Pack \nBy §dKitty Shizz§r §r§odiscord.gg/aujyATgMVy",
+        "uuid": "1d870182-06a7-4709-ac40-a9734a5799c2",
+		"version": [2, 1, 2],
+		"min_engine_version": [1, 21, 0]
+	},
+	"metadata": {
+		"authors": [
+			"BY Kitty Shizz"
+		],
+		"license": "Kitty Shizz Eula",
+		"url": "http://www.discord.gg/aujyATgMVy",
+		"generated_with": {
+			"kittys_build_tool": ["2.1.0"]
+		}
+	},
+    "modules": [
+		{
+			"description": "Kittys Instant ScoreBoard",
+			"type": "data",
+			"uuid": "1f1f94de-de97-422d-bec0-e566777efc82",
+			"version": [2, 1, 2]
+		},
+        {
+            "type": "script",
+            "uuid": "100df984-5c77-4f9b-83d5-1b63e81aa321",
+            "entry": "scripts/KittysInstantScoreBoard.js",
+            "version": [2, 1, 2]
+        }
+    ],
+    "dependencies": [
+		{
+			"module_name": "@minecraft/server",
+			"version": "2.4.0"
+		},
+		{
+			"module_name": "@minecraft/server-ui",
+			"version": "2.0.0"
+		},
+		{
+			"uuid": "1764cbe0-92b6-4086-a0df-1e01baf95112", // Key With RP
+			"version": [2, 1, 2]
+		}
+	],
+    "settings": [
+        {
+            "type": "label",
+            "text": "**Addon by \u00a7uKitty Shizz\u00a7r** \n\nIf you have any questions or need support, feel free to reach out!"
+        },
+        {
+            "type": "input",
+            "text": "Support Server:",
+            "default": "https://discord.gg/aujyATgMVy",
+            "name": "Support"
+        }
+    ]
+}

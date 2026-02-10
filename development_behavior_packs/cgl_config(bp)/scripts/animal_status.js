@@ -9,6 +9,13 @@ export function Mostrar_vida_do_mob (){
         }
     }
 }
+world.afterEvents.entityHurt.subscribe((ev) => {
+    const animal = ev.hurtEntity;
+    const vida_score = animal.getComponent("health");
+    if(vida_score) {
+        animal.nameTag = ` ${vida_score.currentValue.toFixed(1)}\n${animal.typeId.replace("minecraft:", "")}`;
+    }
+});
 // world.afterEvents.entitySpawn.subscribe((ev) => {
 //     const vida_score = ev.entity.getComponent("health");
 //     system

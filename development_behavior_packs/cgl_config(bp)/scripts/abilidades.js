@@ -2,8 +2,9 @@ import { world, system, InputButton, ButtonState } from "@minecraft/server"
 // double_jump_scoreboard do player = 2
 
 world.afterEvents.playerButtonInput.subscribe((ev) => {
-    const double_jump_scoreboard = world.scoreboard.getObjective("double_jump");
     const { player, button, newButtonState } = ev;
+    const double_jump_scoreboard = world.scoreboard.getObjective("double_jump");
+    
     const dash_scoreboard = world.scoreboard.getObjective("dash");
     const dash_score = dash_scoreboard.getScore(player) ?? 0;
     const double_jump_score = double_jump_scoreboard.getScore(player) ?? 0;

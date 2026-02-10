@@ -1,26 +1,5 @@
 import { world, system} from "@minecraft/server"
-const Area_quadradaMinima = {
-    x: 60,      y: 60,     z: 155
-};
-const Area_quadradaMaxima = { 
-    x: 200,       y: 100,      z: 236
-};
 
-
-
-world.beforeEvents.playerBreakBlock.subscribe((ev) => {
-    
-    const bloco = ev.player.getHeadLocation(); // A posição do jogador tem varias casas decimais kkkkkk
-    if ( Math.floor(bloco.x) >= Area_quadradaMinima.x && Math.floor(bloco.x) <= Area_quadradaMaxima.x &&
-         Math.floor(bloco.y) >= Area_quadradaMinima.y && Math.floor(bloco.y) <= Area_quadradaMaxima.y &&
-         Math.floor(bloco.z) >= Area_quadradaMinima.z && Math.floor(bloco.z) <= Area_quadradaMaxima.z ) 
-        {
-            ev.cancel = true;
-            ev.player.sendMessage("Você não pode");
-    }
-    
-
-});
 //Contador de kills
 
 // Primeiro remover a tag do mob que matou,

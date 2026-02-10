@@ -9,8 +9,6 @@ let descansarRelogio = undefined, // Variavel para encerrar o loop do relogio qu
 world.afterEvents.playerJoin.subscribe((ev) => {
     const mana_scoreboard = world.scoreboard.getObjective("mana");
     const estamina_scoreboard = world.scoreboard.getObjective("estamina");
-    
-    
     system.runTimeout(() => {
             const jugador = world.getAllPlayers().filter((player) => player.id == ev.playerId); // Retorna apenas uma posição de array do objeto player
             
@@ -32,12 +30,12 @@ world.afterEvents.playerJoin.subscribe((ev) => {
 
 
 //         Relogio que mostra a hora no chat
-     descansarRelogio = system.runInterval(() => {
-     const relogio = new Date(),
+    descansarRelogio = system.runInterval(() => {
+    const relogio = new Date(),
         variavelMinuto = relogio.getMinutes().toString().padStart(2, "0"),
         VariavelHora = (relogio.getHours() - 3 + 24) % 24,
         horaFormatada = `${VariavelHora.toString().padStart(2, "0")}:${variavelMinuto}`;
-     world.sendMessage("Hora " + horaFormatada);
+    world.sendMessage("Hora " + horaFormatada);
      console.log("Hora " + horaFormatada);
 }, 1000);
 

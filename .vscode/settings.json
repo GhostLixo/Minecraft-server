@@ -1,0 +1,4 @@
+{
+    "minecraft-debugger.showDiagnosticViewOnConnect": true,
+    "minecraft-debugger.reloadOnSourceChanges.enabled": true
+}
