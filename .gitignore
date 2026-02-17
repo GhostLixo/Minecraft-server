@@ -15,3 +15,4 @@ packet-statistics.txt
 /worlds/level/db
 *.dat
 *.dat_old
+/worlds/mundo_plano
