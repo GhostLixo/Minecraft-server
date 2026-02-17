@@ -1,1 +1,4 @@
-import "./Interfaces/ui_main"
+import "./Interfaces/index"
+import "./entidades/index"
+import "./mundo/index"
+
