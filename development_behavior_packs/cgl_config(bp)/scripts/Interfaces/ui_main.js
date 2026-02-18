@@ -1,7 +1,7 @@
 import { world, system } from "@minecraft/server"
 import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui"
 //import { MinecraftEffectTypes } from "./util/vanilla-data.js"
-import {MinecraftEffectTypes} from "vanilla-data"
+//import {MinecraftEffectTypes} from "vanilla-data"
 
 system.run(() => {
     
@@ -34,6 +34,7 @@ system.run(() => {
                     abrirMenuPay(player)
                     break;
                 case 3:
+                    abrirMenuAdmin(player)
                     break;
             }
         })
@@ -107,12 +108,11 @@ system.run(() => {
     
     /////////////////////////////////////////// Clan
     function Clan_form_verMembros(player){
-        const VerMembros = new MessageFormData();
-        VerMembros.body("Corpo");
-        VerMembros.title("Titulo")
-        VerMembros.button1("Voltar");
+        const painelMembro = new ModalFormData();
+        painelMembro.label("teste");
+        painelMembro.submitButton("voltar")
         
-        VerMembros.show(player)
+        painelMembro.show(player)
         
     }
     function abrirMenuClan(player){
@@ -131,7 +131,7 @@ system.run(() => {
         }
         switch (response.selection){
             case 0:
-                Clan_form_verMembros();
+                Clan_form_verMembros(player);
                 break;
         }
      })
@@ -141,26 +141,31 @@ system.run(() => {
 
     function abrirMenuAdmin(player) {
         const admin_form = new ActionFormData();
-        admin_form.title("criativo");
-        admin_form.label("sobrevivencia");
+        admin_form.button("criativo");
+        admin_form.button("sobrevivencia");
         admin_form.button("ficar invisivel");
+        admin_form.button("aparecer")
 
         admin_form.show(player).then((response) => {
             if (response.canceled) {
                 player.sendMessage("fechou o painel")
             }
             switch (response.selection) {
-                case 0:
-                    player.setGameMode("Creative")
-                    break;
-                case 1:
-                    player.setGameMode("Survival")
-                    break;
-                case 2:
-                    player.addEffect(MinecraftEffectTypes.Invisibility, Infinity,{
-                    showParticles: false,
-                    })
-                    break;
+              case 0:
+                player.setGameMode("Creative");
+                break;
+              case 1:
+                player.setGameMode("Survival");
+                break;
+              case 2:
+                // 2000000 é o valor padrão para "infinito" no Minecraft Bedrock
+                player.addEffect("minecraft:invisibility", 2000000, {
+                  showParticles: false,
+                });
+                break;
+            case 3:
+                player.removeEffect("minecraft:invisibility")
+                break;
             }
         })
     }
