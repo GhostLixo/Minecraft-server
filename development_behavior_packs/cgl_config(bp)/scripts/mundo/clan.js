@@ -2,7 +2,8 @@ import {
   world,
   system,
   CommandPermissionLevel,
-  CustomCommandStatus
+  CustomCommandStatus,
+  StructureSaveMode
 } from "@minecraft/server";
 
 world.beforeEvents.chatSend.subscribe((ev) => {
@@ -12,7 +13,8 @@ world.beforeEvents.chatSend.subscribe((ev) => {
     }
 });
 
-
+// revele re resd /re res
+System
 system.beforeEvents.startup.subscribe((init) => {
   const comandoPersonalizado = { //criando um objeto e definindo suas propriedades
     name: "clan:painel", // nome do comando 
