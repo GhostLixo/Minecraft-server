@@ -1,62 +1,86 @@
 import { world, system } from "@minecraft/server"
-import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui"
-//import { MinecraftEffectTypes } from "./util/vanilla-data.js"
-//import {MinecraftEffectTypes} from "vanilla-data"
+import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
+import { formmeuclan, formlistclans, formconvitarMembro,
+    form_membrosclan, form_expulsarmembro,
+    form_promovermembro, form_rebaixarmembro,
+    form_sairclan, formcriaclan, arrayclan} from  "./clan_ex"
 
 system.run(() => {
+    world.afterEvents.itemUse.subscribe((ev) => {
+        const item = ev.itemStack
+        const player = ev.source
+
+        if (item.typeId === "minecraft:compass") {
+            abrirMenuPrincipal(player);
+            console.log("Do cla -->" + player.getDynamicProperty("doclan"));
+            console.log("Valor cla -->" + player.getDynamicProperty("nivelClan") + typeof(player.getDynamicProperty("nivelClan")));
+            if (player.getDynamicProperty("nivelClan") >= 3){
+                console.log("true");
+            }else{
+                console.log("false");
+            }
+            if (player.getDynamicProperty("doclan") != "civil"){
+                console.log("Sim é diferente de civil");
+            }
+        }
+    })
+})
     
     //menu principal
     function abrirMenuPrincipal(player) {
         const main_form = new ActionFormData();
-        main_form.title("menu")
+        main_form.title("menu");
         main_form.label(
             `Id [${player.getDynamicProperty("id")}] | name ${player.name}\n`+
-            `       idade 18 | sexo M`)
-        main_form.button("status")
-        main_form.button("clan")
-        main_form.button("pay")
-        if (player.hasTag("admin")){
-             main_form.button("admin")
-        }
+            `       idade 18 | sexo M\ncla ${player.getDynamicProperty("doclan")}`);
+        main_form.button("status");
+        //if (player.getDynamicProperty("clan") == "civil") {main_form.button("clan")};
+        if (player.getDynamicProperty("doclan") == "civil") 
+              {main_form.button("|>>>  Clãs  <<<|");
+        }else {main_form.button("--- Meu Clã ---");}
+        
+        main_form.button("pay");
+        if (player.hasTag("admin")) { main_form.button("admin");}
+
 
         main_form.show(player).then((response) => {
             if (response.canceled) {
-                player.sendMessage("esta off")
+                player.sendMessage("esta off");
             }
             switch (response.selection) {
                 case 0:
-                    abrirMenuStatus(player)
+                    abrirMenuStatus(player);
                     break;
                 case 1:
                     abrirMenuClan(player);
                     break;
                 case 2:
-                    abrirMenuPay(player)
+                    abrirMenuPay(player);
                     break;
                 case 3:
-                    abrirMenuAdmin(player)
+                    abrirMenuAdmin(player);
                     break;
             }
-        })
+        });
     }
     //////////////////////////////////////
 
     //menu status
     function abrirMenuStatus(player) {
         const status_form = new ActionFormData();
-        status_form.title("status")
+        status_form.title("status");
         status_form.label(`             bem vindo\n   ${player.name}\n`+
             `   força ${player.getDynamicProperty("strength")}\n`+
             `   velocidade ${player.getDynamicProperty("velocity")}`
         )
-        status_form.button("up força")
-        status_form.button("up velociade")
-        status_form.button("up jump")
-        status_form.button("volta")
+        status_form.button("up força");
+        status_form.button("up velociade");
+        status_form.button("up jump");
+        status_form.button("volta");
 
         status_form.show(player).then((response) => {
             if (response.canceled) {
-                player.sendMessage("ola vc saiu")
+                player.sendMessage("ola vc saiu");
             }
 
             switch (response.selection) {
@@ -70,10 +94,10 @@ system.run(() => {
 
                     break;
                 case 3:
-                    abrirMenuPrincipal(player)
+                    abrirMenuPrincipal(player);
                     break;}
         })}
-    /////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
     
     function abrirMenuPay(player) {
       const money = world.scoreboard.getObjective("money");
@@ -106,37 +130,147 @@ system.run(() => {
     }
     
     
-    /////////////////////////////////////////// Clan
-    function Clan_form_verMembros(player){
-        const painelMembro = new ModalFormData();
-        painelMembro.label("teste");
-        painelMembro.submitButton("voltar")
-        
-        painelMembro.show(player)
-        
-    }
+    /////////////////////////////////////////// Clan/////////////
     function abrirMenuClan(player){
-
-     const clan_form = new ActionFormData();
-     clan_form.title("Painel do clan");
-     clan_form.label("Informacoes");
-
-     clan_form.button("Membros do cla");
-     clan_form.button("Gerenciar membros");
-     clan_form.button("Recrutar civil");
-
-     clan_form.show(player).then((response) =>{
-        if (response.canceled){
-            //clan_form = null;
-        }
-        switch (response.selection){
-            case 0:
-                Clan_form_verMembros(player);
+const formMenuClan = new ActionFormData()
+    .title("Clan Menu")
+    if (player.getDynamicProperty("doclan") != "civil") {
+        switch (player.getDynamicProperty("nivelClan")){
+            case 1:
+                formMenuClan.button("Informações do Clã");
+                formMenuClan.button("Regras do Clã");
+                formMenuClan.button("Bilhetes dos Superiores");
+                formMenuClan.button("Membros do Clã", "textures/ui/people.png");
+                formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
+                break;
+            case 2:
+                formMenuClan.button("Informações do Clã");
+                formMenuClan.button("Regras do Clan");
+                formMenuClan.button("Bilhetes dos Superiores");
+                formMenuClan.button("membros do Clan", "textures/ui/people.png");
+                formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
+                break;
+            case 3:
+                formMenuClan.button("Informações do Clã");
+                formMenuClan.button("Regras do Clan");
+                formMenuClan.button("Deixar Bilhete");
+                formMenuClan.button("membros do Clan", "textures/ui/people.png");
+                formMenuClan.button("Convidar Civil");
+                formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
         }
-     })
+    } else {
+        console.log("aqui");
+        formMenuClan.button("Criar Clan", "textures/ui/plus.png");
+        formMenuClan.button("Ver lista de clãs");
+    }
+    // switch(player.getDynamicProperty("nivelClan")){
+    //             case 3: 
+    //                 formMenuClan.button("membros do Clan", "textures/ui/people.png");
+    //                 formMenuClan.button("Clan List",       "textures/ui/list.png");
+                    
+    //                 formMenuClan.button("convidar membros para o Clan", "textures/ui/plus.png");
+    //                 formMenuClan.button("expulsar membros do Clan",     "textures/ui/close.png");
+    //                 formMenuClan.button("sair do Clan",    "textures/ui/close.png");
+    //                 break;
+                
+    //             case 1: 
+    //                 formMenuClan
+    //                 .button("convidar membros para o Clan", "textures/ui/plus.png")
+    //                 .button("expulsar membros do Clan", "textures/ui/close.png")
+    //             break;
+    //             case 2: 
+    //                 formMenuClan
+    //                 .button("promover membros do Clan", "textures/ui/plus.png")
+    //                 .button("rebaixar membros do Clan", "textures/ui/minus.png");
+    //             break;
+    //             default:
+    //                 formMenuClan
+    //                 .button("criar Clan", "textures/ui/plus.png")
+    //                 .button("Clan List", "textures/ui/list.png");
+
+    //         }
+            
+    //     //                Nivel 1
+    //     if (player.getDynamicProperty("nivelClan") == 1) {formMenuClan
+    //         .button("meu Clan", "textures/ui/eye.png")
+    //         .button("membros do Clan", "textures/ui/people.png")
+    //         .button("Clan List", "textures/ui/list.png")
+    //         .button("sair do Clan", "textures/ui/close.png")}
+    //     //                Nivel 2 
+    //     else if (player.getDynamicProperty("nivelClan") >= 2) {formMenuClan
+    //             .button("convidar membros para o Clan", "textures/ui/plus.png")
+    //             .button("expulsar membros do Clan", "textures/ui/close.png")}
+    //     //                Nivel 3        
+    //     else if (player.getDynamicProperty("nivelClan") <= 3) {formMenuClan
+    //             .button("promover membros do Clan", "textures/ui/plus.png")
+    //             .button("rebaixar membros do Clan", "textures/ui/minus.png");}}
+    // else {  formMenuClan
+    //         .button("criar Clan", "textures/ui/plus.png")
+    //         .button("Clan List", "textures/ui/list.png");
+    // }
+        
+    formMenuClan.show(player).then((response) => {
+        if (response.canceled) {
+            return;}
+        if (player.getDynamicProperty("doclan") == "civil"){
+            switch (response.selection){
+                case 0:// Criar clã
+                    formcriaclan(player);
+                    break;
+                case 1:// Ver lista de clã
+                    console.log("Array --> " +arrayclan);
+                    break;
+            }
+        } else {
+            switch (response.selection) {
+            case 0:
+                console.log("case0 else");
+                //formmeuclan(player)
+                break;
+            case 1:
+                console.log("case1");
+                //formlistclans(player)
+                break;
+            case 2:
+                console.log("case2");
+                //formconvitarMembro(player)
+                break;
+            case 3:
+                console.log("case3");
+                //formmembrosclan(player)
+                break;
+            case 4:
+                console.log("case4");
+                formexpulsarmembro(player)
+                break;
+            case 5:
+                console.log("case5")
+                formpromovermembro(player)
+                break;
+            case 6:
+                console.log("case6")
+                formrebaixarmembro(player)
+                break;
+            case 7:
+                console.log("case7")
+                formsairclan(player)
+                break;
+            case 8:
+                console.log("case8")
+                formlistclans(player)
+                break;
+            case 9:
+                console.log("case9")
+                formcriaclan(player)
+                player.sendMessage("clan criado")
+                break;
+            }
+        }
+    });
 
     }
+
     //////////////////////////////////////////
 
     function abrirMenuAdmin(player) {
@@ -164,44 +298,31 @@ system.run(() => {
                 });
                 break;
             case 3:
-                player.removeEffect("minecraft:invisibility")
+                player.removeEffect("minecraft:invisibility").
                 break;
             }
         })
     }
 
     
-    
-    
-    
-
-
     world.afterEvents.playerSpawn.subscribe((ev) => {
-        const player = ev.player
+        const player = ev.player;
         if (ev.initialSpawn === true) {
-            player.sendMessage("surgiu")
+            player.sendMessage("surgiu");
             if (player.getDynamicProperty("id") === undefined) {
                 player.setDynamicProperties({
                     "id": Math.floor(Math.random() * 999999999) + 1,
                     "strength": 0,
-                    "velocity": 0,
-                    "Clan": "Civil"
-                })
+                    "velocity": 0
+                });
             }
-
+            if (player.getDynamicProperty("doclan") === undefined) {
+                player.setDynamicProperty("doclan", "civil");
+            }
         }
-    })
+    });
 
     
-    world.afterEvents.itemUse.subscribe((ev) => {
-        const item = ev.itemStack
-        const player = ev.source
-
-        if (item.typeId === "minecraft:compass") {
-            abrirMenuPrincipal(player)
-            
-        }
-    })
-})
+    
 
 
