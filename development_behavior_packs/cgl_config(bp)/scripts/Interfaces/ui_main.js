@@ -3,7 +3,7 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { formmeuclan, formlistclans, formconvitarMembro,
     form_membrosclan, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
-    form_sairclan, formcriaclan, arrayclan} from  "./clan_ex"
+    form_sairclan, formcriaclan, arrayclan, MostrarClans} from  "./clan_ex"
 
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
@@ -220,6 +220,8 @@ const formMenuClan = new ActionFormData()
                     break;
                 case 1:// Ver lista de clã
                     console.log("Array --> " +arrayclan);
+                    console.log("Array --> " + typeof(arrayclan.toString()));
+                    MostrarClans(player);
                     break;
             }
         } else {

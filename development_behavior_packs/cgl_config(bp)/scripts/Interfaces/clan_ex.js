@@ -1,7 +1,7 @@
 //extesao de clan.js, para adicionar mais funcoes separa do codigo principal, 
 // para melhor organizaçao do codigo
 
-import { ModalFormData } from "@minecraft/server-ui";
+import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
 import { system, world } from "@minecraft/server";
 export let arrayclan = [];
 function carregarClans() {
@@ -37,12 +37,19 @@ export function formmeuclan(player) {
 // }
 
 
-
-export function listclan (player){
-    const listandoclan = new ModalFormData()
-    listandoclan.title("Clãs existentes"); 
-
+export function MostrarClans(player){
+    const formClanList = new ActionFormData();
+    formClanList.title("Clãs Existentes");
+    for (let x in arrayclan){
+        formClanList.body(`Veja a Lista dos Clãs existentes:\n ---> ${arrayclan.toString()[x]}\n`);
+    }
+    
+    
+       
+    formClanList.show(player).then((response) => {
+        if (response.canceled) return;})
 }
+
 export function formlistclans(player, clanNames) {
     const formClanList = new ModalFormData()
     world.getAllPlayers().forEach((player) => {
