@@ -9,9 +9,11 @@
             "request": "attach",
             "name": "Attach to Minecraft",
             "mode": "connect",
-            "localRoot": "H:/Interpretada/gitmine/test/development_behavior_packs/cgl_config(bp)/scripts",
+            "localRoot": "H:/Interpretada/gitmine/test/development_behavior_packs/cgl_config(bp)",
+            "targetModuleUuid": "e5145c36-5878-48d2-ba19-396025faa072",
             "host": "localhost",
-            "port": 19144
+            "port": 19144,
         }
     ]
 }
+

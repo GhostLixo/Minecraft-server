@@ -1,0 +1,30 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "tier2_upgrade_a50f432b"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "ABA",
+      " A "
+    ],
+    "key": {
+      "A": {
+        "item": "rrs:tier1_upgrade",
+        "data": 0
+      },
+      "B": {
+        "item": "minecraft:copper_block",
+        "data": 0
+      }
+    },
+    "result": {
+      "item": "rrs:tier2_upgrade",
+      "count": 1
+    }
+  }
+}

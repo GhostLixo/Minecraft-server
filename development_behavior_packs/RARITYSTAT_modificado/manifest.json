@@ -1,0 +1,66 @@
+{
+  "format_version": 2,
+  "metadata": {
+    "authors": [
+      "vertX"
+    ],
+    "url": "",
+    "product_type": "addon"
+  },
+  "header": {
+    "name": "RARITY STATS BP v19.4",
+    "description": "Adds item rarity to Minecraft. Based on rarity, items can receive stat boosts, skills, and enhanced attacks.",
+    "uuid": "7e313003-c911-4b80-a59a-9a3a50b70c79",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      100
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "a9b28de7-569f-4a7e-859c-58d1e3841a40",
+      "version": [
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "a31ac002-798b-4f1a-bcab-0b011e06675c",
+      "version": [
+        1,
+        0,
+        1
+      ],
+      "entry": "scripts/main.js",
+      "name": "Item Rarity Script"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "11754688-d196-4c3c-b546-9a01a5fe31e9",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.1.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.0.0"
+    }
+  ]
+}

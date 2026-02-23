@@ -1,4 +1,13 @@
-import "./Interfaces/index"
-import "./entidades/index"
-import "./mundo/index"
+import "./mundo/clan"
+
+//entidades
+import "./entidades/Stats.js"
+import "./entidades/spawn.js"
+
+//interfaces
+import "./Interfaces/ui_main.js"
+
+
+//mundo
+
 

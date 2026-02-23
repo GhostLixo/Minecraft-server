@@ -3,8 +3,9 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { formmeuclan, formlistclans, formconvitarMembro,
     form_membrosclan, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
-    form_sairclan, formcriaclan, arrayclan, MostrarClans} from  "./clan_ex"
+    form_sairclan, formcriaclan, arrayclan, load, save} from  "./clan_ex"
 
+const FIGURINHA = ["", ""];
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
         const item = ev.itemStack
@@ -31,8 +32,8 @@ system.run(() => {
         const main_form = new ActionFormData();
         main_form.title("menu");
         main_form.label(
-            `Id [${player.getDynamicProperty("id")}] | name ${player.name}\n`+
-            `       idade 18 | sexo M\ncla ${player.getDynamicProperty("doclan")}`);
+            `Id [${player.getDynamicProperty("id")}]\n`+
+            `       idade 18 | sexo M\nClã --> ${player.getDynamicProperty("doclan")} ${FIGURINHA[0]}${FIGURINHA[1]}`);
         main_form.button("status");
         //if (player.getDynamicProperty("clan") == "civil") {main_form.button("clan")};
         if (player.getDynamicProperty("doclan") == "civil") 
@@ -129,7 +130,7 @@ system.run(() => {
       });
     }
     
-    
+
     /////////////////////////////////////////// Clan/////////////
     function abrirMenuClan(player){
 const formMenuClan = new ActionFormData()
@@ -145,24 +146,24 @@ const formMenuClan = new ActionFormData()
                 break;
             case 2:
                 formMenuClan.button("Informações do Clã");
-                formMenuClan.button("Regras do Clan");
+                formMenuClan.button("Regras do Clã");
                 formMenuClan.button("Bilhetes dos Superiores");
-                formMenuClan.button("membros do Clan", "textures/ui/people.png");
+                formMenuClan.button("Membros do Clã", "textures/ui/people.png");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
             case 3:
                 formMenuClan.button("Informações do Clã");
-                formMenuClan.button("Regras do Clan");
+                formMenuClan.button("Regras do Clã");
                 formMenuClan.button("Deixar Bilhete");
-                formMenuClan.button("membros do Clan", "textures/ui/people.png");
+                formMenuClan.button("Membros do Clã", "textures/ui/people.png");
                 formMenuClan.button("Convidar Civil");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
         }
     } else {
         console.log("aqui");
-        formMenuClan.button("Criar Clan", "textures/ui/plus.png");
-        formMenuClan.button("Ver lista de clãs");
+        formMenuClan.button("Criar Clã", "textures/ui/plus.png");
+        formMenuClan.button("Ver lista de Clãs");
     }
     // switch(player.getDynamicProperty("nivelClan")){
     //             case 3: 
@@ -214,14 +215,16 @@ const formMenuClan = new ActionFormData()
         if (response.canceled) {
             return;}
         if (player.getDynamicProperty("doclan") == "civil"){
+            ///////////////////////////////////    Form Civil
             switch (response.selection){
                 case 0:// Criar clã
                     formcriaclan(player);
                     break;
                 case 1:// Ver lista de clã
+                    arrayclan = load("clan.json")
                     console.log("Array --> " +arrayclan);
                     console.log("Array --> " + typeof(arrayclan.toString()));
-                    MostrarClans(player);
+                    formlistclans(player, arrayclan);
                     break;
             }
         } else {
@@ -244,28 +247,26 @@ const formMenuClan = new ActionFormData()
                 break;
             case 4:
                 console.log("case4");
-                formexpulsarmembro(player)
+                formconvitarMembro(player)
                 break;
             case 5:
                 console.log("case5")
-                formpromovermembro(player)
+                form_promovermembro(player)
                 break;
             case 6:
                 console.log("case6")
-                formrebaixarmembro(player)
+                form_rebaixarmembro(player)
                 break;
             case 7:
                 console.log("case7")
-                formsairclan(player)
+                form_sairclan(player)
                 break;
             case 8:
                 console.log("case8")
-                formlistclans(player)
+                
                 break;
             case 9:
                 console.log("case9")
-                formcriaclan(player)
-                player.sendMessage("clan criado")
                 break;
             }
         }

@@ -1,0 +1,30 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "tier3_upgrade_3d07baea"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ABA",
+      "BAB",
+      "ABA"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:diamond",
+        "data": 0
+      },
+      "B": {
+        "item": "rrs:tier2_upgrade",
+        "data": 0
+      }
+    },
+    "result": {
+      "item": "rrs:tier3_upgrade",
+      "count": 1
+    }
+  }
+}

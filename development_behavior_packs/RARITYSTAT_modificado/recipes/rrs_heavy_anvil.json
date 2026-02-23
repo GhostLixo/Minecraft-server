@@ -1,0 +1,42 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "heavy_anvil_87984b5f"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ABA",
+      "CDC",
+      "EEE"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:iron_block",
+        "data": 0
+      },
+      "B": {
+        "item": "minecraft:heavy_core",
+        "data": 0
+      },
+      "C": {
+        "item": "minecraft:chain",
+        "data": 0
+      },
+      "D": {
+        "item": "minecraft:amethyst_cluster",
+        "data": 0
+      },
+      "E": {
+        "item": "minecraft:iron_ingot",
+        "data": 0
+      }
+    },
+    "result": {
+      "item": "rrs:heavy_anvil",
+      "count": 1
+    }
+  }
+}

@@ -1,24 +1,18 @@
-import {
-  world,
-  system,
-  CommandPermissionLevel,
-  CustomCommandStatus,
-  StructureSaveMode
-} from "@minecraft/server";
-
+import {world, system, CommandPermissionLevel, CustomCommandStatus } from "@minecraft/server";
+// Bloco de teste
 world.beforeEvents.chatSend.subscribe((ev) => {
-    
     if (ev.message == "clan"){
         world.sendMessage("Clan teste");
     }
 });
 
+
 system.beforeEvents.startup.subscribe((init) => {
-    const comandoPersonalizado2 = { //criando um objeto e definindo suas propriedades
+    const comandoPersonalizado2 = { //criando uma variavel objeto e definindo suas propriedades
         name: "clan:painel2", // nome do comando 
         description: "teste", // Descrevendo o que ele faz por exemplo --> Abrir painel do clan
-        permissionLevel: CommandPermissionLevel.Any // Niveis de permissão 
-    };
+        permissionLevel: CommandPermissionLevel.Any };// Niveis de permissão 
+
     init.customCommandRegistry.registerCommand(comandoPersonalizado2, comandinho);
   // param 1 recebe as informações do objeto
   // param 2 você deve passar uma função para o segundo parametro
@@ -26,8 +20,7 @@ system.beforeEvents.startup.subscribe((init) => {
     const sairdoclan = { 
         name: "clan:sairdoclan", 
         description: "teste", 
-        permissionLevel: CommandPermissionLevel.Any 
-    };
+        permissionLevel: CommandPermissionLevel.Any };
     init.customCommandRegistry.registerCommand(sairdoclan, Sairclan);
 });
 

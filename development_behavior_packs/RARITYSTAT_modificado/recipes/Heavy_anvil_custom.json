@@ -1,0 +1,38 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "recipes_2d74bc14"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ABA",
+      "CDC",
+      "ABA"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:iron_block",
+        "data": 0
+      },
+      "B": {
+        "item": "minecraft:netherite_ingot",
+        "data": 0
+      },
+      "C": {
+        "item": "minecraft:chain",
+        "data": 0
+      },
+      "D": {
+        "item": "minecraft:amethyst_cluster",
+        "data": 0
+      }
+    },
+    "result": {
+      "item": "rrs:heavy_anvil",
+      "count": 1
+    }
+  }
+}

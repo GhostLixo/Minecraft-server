@@ -16,3 +16,11 @@ packet-statistics.txt
 *.dat
 *.dat_old
 /worlds/mundo_plano
+/worlds
+/worlds
+/worlds/desativada
+/worlds/desativada
+/worlds/desativada
+/worlds/desativada
+worlds/desativada/db/000005.ldb
+worlds/desativada/db/000006.log

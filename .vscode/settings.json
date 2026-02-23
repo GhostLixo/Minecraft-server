@@ -1,4 +1,5 @@
 {
     "minecraft-debugger.showDiagnosticViewOnConnect": true,
-    "minecraft-debugger.reloadOnSourceChanges.enabled": true
+    "minecraft-debugger.reloadOnSourceChanges.enabled": true,
+    "minecraft-debugger.reloadOnSourceChanges.delay": 700
 }

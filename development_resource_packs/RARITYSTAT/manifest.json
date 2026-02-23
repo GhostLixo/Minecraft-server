@@ -1,0 +1,44 @@
+{
+  "format_version": 2,
+  "metadata": {
+    "authors": [
+      "vertX"
+    ]
+  },
+  "header": {
+    "name": "RARITY STATS RP v19.4",
+    "description": "Adds item rarity to Minecraft. Based on rarity, items can receive stat boosts, skills, and enhanced attacks.",
+    "uuid": "56bcbf1e-26b5-4a77-b959-63e47e0d65c8",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      80
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "04bdc6c4-6e14-4949-9177-ca690ff3432e",
+      "version": [
+        1,
+        0,
+        1
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "5e1d62d3-362f-4b69-ac59-aaac21862a47",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}
