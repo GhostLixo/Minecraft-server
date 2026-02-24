@@ -1,11 +1,10 @@
 import { world, system } from "@minecraft/server"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { formmeuclan, formlistclans, formconvitarMembro,
+import { formmeuclan,  formconvitarMembro,
     form_membrosclan, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
-    form_sairclan, formcriaclan, arrayclan, load, save} from  "./clan_ex"
+    form_sairclan, formcriaclan, arrayclan, MostrarClans} from  "./clan_ex"
 
-const FIGURINHA = ["", ""];
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
         const item = ev.itemStack
@@ -33,7 +32,7 @@ system.run(() => {
         main_form.title("menu");
         main_form.label(
             `Id [${player.getDynamicProperty("id")}]\n`+
-            `       idade 18 | sexo M\nClã --> ${player.getDynamicProperty("doclan")} ${FIGURINHA[0]}${FIGURINHA[1]}`);
+            `idade 18 | sexo M\nClã --> ${player.getDynamicProperty("doclan")}`);
         main_form.button("status");
         //if (player.getDynamicProperty("clan") == "civil") {main_form.button("clan")};
         if (player.getDynamicProperty("doclan") == "civil") 
@@ -221,10 +220,9 @@ const formMenuClan = new ActionFormData()
                     formcriaclan(player);
                     break;
                 case 1:// Ver lista de clã
-                    arrayclan = load("clan.json")
                     console.log("Array --> " +arrayclan);
                     console.log("Array --> " + typeof(arrayclan.toString()));
-                    formlistclans(player, arrayclan);
+                    MostrarClans(player, arrayclan);
                     break;
             }
         } else {

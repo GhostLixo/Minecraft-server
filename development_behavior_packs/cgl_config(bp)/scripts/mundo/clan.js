@@ -1,11 +1,14 @@
 import {world, system, CommandPermissionLevel, CustomCommandStatus } from "@minecraft/server";
 // Bloco de teste
 world.beforeEvents.chatSend.subscribe((ev) => {
-    if (ev.message == "clan"){
+    if (ev.message == "!aceitarconvite"){
+        //if (){} Verificar se o player tem convite
         world.sendMessage("Clan teste");
     }
 });
-
+function ConviteClan(player){
+    
+}
 
 system.beforeEvents.startup.subscribe((init) => {
     const comandoPersonalizado2 = { //criando uma variavel objeto e definindo suas propriedades
@@ -22,8 +25,18 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "teste", 
         permissionLevel: CommandPermissionLevel.Any };
     init.customCommandRegistry.registerCommand(sairdoclan, Sairclan);
+
+    // const AceitarConvitedeClan = { //criando uma variavel objeto e definindo suas propriedades
+    //     name: "clan:aceitarconvite", // nome do comando 
+    //     description: "teste", // Descrevendo o que ele faz por exemplo --> Abrir painel do clan
+    //     permissionLevel: CommandPermissionLevel.Any };// Niveis de permissão 
+
+    // init.customCommandRegistry.registerCommand(AceitarConvitedeClan, AceitarConvite);
 });
 
+// function AceitarConvite(){
+
+// }
 
 function comandinho() {
     system.run(() => {
