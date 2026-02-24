@@ -248,8 +248,8 @@ const formMenuClan = new ActionFormData()
                 formconvitarMembro(player)
                 break;
             case 5:
-                console.log("case5")
-                form_promovermembro(player)
+                console.log("case5");
+                form_sairclan(player);
                 break;
             case 6:
                 console.log("case6")

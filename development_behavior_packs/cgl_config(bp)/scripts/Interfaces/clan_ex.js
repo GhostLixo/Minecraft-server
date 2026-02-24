@@ -173,8 +173,21 @@ export function form_promovermembro(player) {
 export function form_rebaixarmembro(player) {
 } // falta fazer
 export function form_sairclan(player) {
+    const formSairClan = new ModalFormData();
+    formSairClan.title("Sair do Clã");
+    formSairClan.textField("Você realmente Deseja sair do clã?", "Digite a palavra chave --> CONFIRMAR");
+    formSairClan.show(player).then((response) => {
+        if (response.canceled) return;
+        else{
+            if (response.formValues[0] == "CONFIRMAR"){
+                player.setDynamicProperty("doclan", "civil");
+                player.setDynamicProperty("nivelClan", 0)
+        }
+    }
     
-} // falta fazer
+    })
+}
+// falta fazer
 export function form_convidarmembro(player){
     
 }
