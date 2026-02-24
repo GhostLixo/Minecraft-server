@@ -7,7 +7,7 @@ world.beforeEvents.chatSend.subscribe((ev) => {
     }
 });
 function ConviteClan(player){
-    
+
 }
 
 system.beforeEvents.startup.subscribe((init) => {
@@ -41,7 +41,7 @@ system.beforeEvents.startup.subscribe((init) => {
 function comandinho() {
     system.run(() => {
         const fabricio = world.getAllPlayers().filter((player) => player.name == "Fabricio7560");
-        fabricio[0].setDynamicProperty("nivelClan", 1);
+        fabricio[0].setDynamicProperty("nivelClan", 3);
         fabricio[0].setDynamicProperty("doclan", "admin");
         
     });

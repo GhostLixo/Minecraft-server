@@ -1,4 +1,4 @@
-import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
+import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui";
 import { system, world } from "@minecraft/server";
 export let arrayclan = [];
 function carregarClans() {
@@ -82,11 +82,12 @@ export function formconvitarMembro(player) {
         .then((response) => {
             if (response.canceled) return;
             else {
-            const jogadorSelecionado = world.getAllPlayers()[response.formValues[0]]
-
+            const jogadorSelecionado = world.getAllPlayers()[response.formValues[0]];
+            Mostrarconvite(jogadorSelecionado, player.getDynamicProperty("doclan"), player );
             //targetPlayer.addTag(`convite_clan_${player.getTags().find(tag => tag.startsWith("clan_"))}`)
             player.sendMessage(`Você convidou ${jogadorSelecionado.name} para o seu clã` );
             console.log("teste " + JSON.stringify(response.formValues));
+
             //aqui vai a logica para convidar o l x
             //  jogador para o clan, como verificar se o jogador existe, se ele tem clan, enviar a mensagem de convite, etc
             }
@@ -94,8 +95,28 @@ export function formconvitarMembro(player) {
         })
 } //feito mas nao testado
 
-
-
+function Mostrarconvite(player, doclan, lider){
+    const form_convite = new MessageFormData();
+    form_convite.title("Você foi convidado para participar de um clã!!!");
+    form_convite.body(`${lider.name} convidou voce para participar do clã: ${doclan}`);
+    form_convite.button1("Aceitar convite");
+    form_convite.button2("Recusar convite");
+    form_convite.show(player).then((response) => {
+        if (response.canceled) return;
+        else {
+                if (response.selection == 0){
+                    player.setDynamicProperty("doclan", doclan);
+                    player.setDynamicProperty("nivelClan", 1);
+                    player.sendMessage("Parabens! Você agora faz parte do clã --> " + doclan);
+                    
+                }
+                else{
+                    lider.sendMessage(player.name + " §cRecusou o convite")
+                    return;
+                }                
+        }
+});
+}
 
 
 
