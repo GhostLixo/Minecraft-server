@@ -147,6 +147,7 @@ const formMenuClan = new ActionFormData()
                 formMenuClan.button("Informações do Clã");
                 formMenuClan.button("Regras do Clã");
                 formMenuClan.button("Bilhetes dos Superiores");
+                formMenuClan.button("Deixar Bilhete");
                 formMenuClan.button("Membros do Clã", "textures/ui/people.png");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
@@ -213,8 +214,9 @@ const formMenuClan = new ActionFormData()
     formMenuClan.show(player).then((response) => {
         if (response.canceled) {
             return;}
-        if (player.getDynamicProperty("doclan") == "civil"){
             ///////////////////////////////////    Form Civil
+        if (player.getDynamicProperty("doclan") == "civil"){
+        
             switch (response.selection){
                 case 0:// Criar clã
                     formcriaclan(player);
@@ -225,7 +227,49 @@ const formMenuClan = new ActionFormData()
                     MostrarClans(player, arrayclan);
                     break;
             }
-        } else {
+        } 
+        else if (player.getDynamicProperty("nivelClan") == 1){
+            switch (response.selection){
+                case 0:// Informação
+                console.log("case0 nicel 1");
+                break;
+                case 1:// Regras
+                console.log("case1 nivel 1 ");
+                break;
+                case 2:// Bilhetes
+                console.log("case2 nivel 1");
+                break;
+                case 3:// Membros
+                console.log("case3 nivel 1");
+                form_membrosclan(player);
+                break;
+                case 4:// Sair do clã
+                console.log("case4 nivel 1");
+                
+                break;
+            }
+        }
+        else if (player.getDynamicProperty("nivelClan") == 2){
+            switch (response.selection){
+                case 0:// Informação
+                console.log("case0 nivel 2");
+                break;
+                case 1:// Regras
+                console.log("case1 nivel 2");
+                break;
+                case 2:// Bilhetes
+                console.log("case2 nivel 2");
+                break;
+                case 3:// Membros
+                console.log("case3 nivel 2");
+                form_membrosclan(player);
+                break;
+                case 4:// Sair do clã
+                console.log("case4 nivel 2");
+                break;
+            }
+        }
+        else {
             switch (response.selection) {
             case 0:
                 console.log("case0 else");
@@ -250,21 +294,6 @@ const formMenuClan = new ActionFormData()
             case 5:
                 console.log("case5");
                 form_sairclan(player);
-                break;
-            case 6:
-                console.log("case6")
-                form_rebaixarmembro(player)
-                break;
-            case 7:
-                console.log("case7")
-                form_sairclan(player)
-                break;
-            case 8:
-                console.log("case8")
-                
-                break;
-            case 9:
-                console.log("case9")
                 break;
             }
         }
@@ -309,7 +338,6 @@ const formMenuClan = new ActionFormData()
     world.afterEvents.playerSpawn.subscribe((ev) => {
         const player = ev.player;
         if (ev.initialSpawn === true) {
-            player.sendMessage("surgiu");
             if (player.getDynamicProperty("id") === undefined) {
                 player.setDynamicProperties({
                     "id": Math.floor(Math.random() * 999999999) + 1,

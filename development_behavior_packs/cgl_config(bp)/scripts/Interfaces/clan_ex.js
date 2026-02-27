@@ -1,6 +1,24 @@
 import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui";
 import { system, world } from "@minecraft/server";
 export let arrayclan = [];
+let infoClan = [
+    {   nome: "",
+        QuantidadeMembro: 0
+
+}]
+
+
+function SalvaInfoClan(){
+    
+}
+
+
+
+
+
+
+
+
 function carregarClans() {
     system.run(() => {
     const clansSalvos = world.getDynamicProperty("clans");
@@ -172,23 +190,23 @@ export function form_promovermembro(player) {
 
 export function form_rebaixarmembro(player) {
 } // falta fazer
-export function form_sairclan(player) {
+
+
+
+export function form_sairclan(player) { // Função 100% pronta e funcional
     const formSairClan = new ModalFormData();
     formSairClan.title("Sair do Clã");
-    formSairClan.textField("Você realmente Deseja sair do clã?", "Digite a palavra chave --> CONFIRMAR");
+    formSairClan.textField("\n\nVocê realmente Deseja sair do clã?", "Digite a palavra chave --> CONFIRMAR");
     formSairClan.show(player).then((response) => {
         if (response.canceled) return;
         else{
             if (response.formValues[0] == "CONFIRMAR"){
                 player.setDynamicProperty("doclan", "civil");
-                player.setDynamicProperty("nivelClan", 0)
+                player.setDynamicProperty("nivelClan", 0);
+                player.sendMessage("§eAgora você já não faz parte de nenhum Clã!!!");
         }
     }
-    
-    })
+    });
 }
-// falta fazer
-export function form_convidarmembro(player){
-    
-}
+
 
