@@ -2,12 +2,51 @@ import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/serve
 import { system, world } from "@minecraft/server";
 import { http, HttpRequest, HttpRequestMethod, HttpHeader } from "@minecraft/server-net"
 
-export let arrayclan = [];
+export let arrayclan = []; // Nomes dos clãs
 
 
 
-function SalvaInfoClan(){
-    
+
+export function formcriaclan(player) {
+    const formCreateClan = new ModalFormData()
+        formCreateClan
+        .title("Criar Clã")
+        .textField("Preencha os campos abaixo para criar seu clã\n\nNome do Clã", "Digite o nome do seu clan")
+        //.textField("Tag do Clan", "Digite a tag do seu clan")
+        //.toggle("Clan privado?", {defaultValue: false}) 
+        .show(player)
+        .then((response) => {
+            if (response.canceled) return;
+            
+            const clanName = response.formValues[0];
+            //const clanTag = response.formValues[1];
+            //const isPrivate = response.formValues[2];
+        salvarClan(clanName, player.name).then(res => {
+        if (res.status === 200) {
+          player.sendMessage(`Clã ${clanName} salvo no banco de dados!`);
+          console.log(res.body);
+          console.log("Slavo");
+          player.addTag(`clan_${clanName}`);
+            player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
+            player.setDynamicProperty("doclan", clanName);
+            player.sendMessage(`Você criou o clan ${clanName}`);
+        } else {
+          player.sendMessage(`Erro ao salvar clã: ${res.status}`); return;
+        }
+      });
+
+            
+        
+            //aqui vai a logica para criar o clan, como verificar se o nome e tag ja existe, 
+            // criar o clan no banco de dados, adicionar o jogador como lider do clan, etc
+        });
+} 
+function salvarClan(clanName, lider) {
+  const request = new HttpRequest("http://localhost:3000/teste");
+  request.method = HttpRequestMethod.Post;
+  request.body = JSON.stringify({ nome: clanName, ListaMembros: [lider] });
+request.headers = [new HttpHeader("Content-Type", "application/json")];
+  return http.request(request);
 }
 
 export async function DBCarregarClanName(){
@@ -28,39 +67,7 @@ export async function DBCarregarClanName(){
 }
 
 
-export function formcriaclan(player) {
-    const formCreateClan = new ModalFormData()
-        formCreateClan
-        .title("Criar Clã")
-        .textField("Preencha os campos abaixo para criar seu clã\n\nNome do Clã", "Digite o nome do seu clan")
-        //.textField("Tag do Clan", "Digite a tag do seu clan")
-        //.toggle("Clan privado?", {defaultValue: false}) 
-        .show(player)
-        .then((response) => {
-            if (response.canceled) return;
-            
-            const clanName = response.formValues[0];
-            //const clanTag = response.formValues[1];
-            //const isPrivate = response.formValues[2];
-salvarClan(clanName).then(res => {
-        if (res.status === 200) {
-          player.sendMessage(`Clã ${clanName} salvo no banco de dados!`);
-          console.log(res.body);
-          console.log("Slavo");
-        } else {
-          player.sendMessage(`Erro ao salvar clã: ${res.status}`);
-        }
-      });
 
-            player.addTag(`clan_${clanName}`);
-            player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
-            player.setDynamicProperty("doclan", clanName);
-            player.sendMessage(`Você criou o clan ${clanName}`);
-        
-            //aqui vai a logica para criar o clan, como verificar se o nome e tag ja existe, 
-            // criar o clan no banco de dados, adicionar o jogador como lider do clan, etc
-        });
-} 
 
 
 
@@ -101,13 +108,7 @@ export function formmeuclan(player) {// Formulario UI
 
 
 
-function salvarClan(clanName) {
-  const request = new HttpRequest("http://localhost:3000/clans");
-  request.method = HttpRequestMethod.Post;
-  request.body = JSON.stringify({ nome: clanName });
-request.headers = [new HttpHeader("Content-Type", "application/json")];
-  return http.request(request);
-}
+
 
 
 
@@ -155,50 +156,70 @@ export function DeixarBilhete(player){
 
 export function formconvitarMembro(player) {
     
-    
-    
+    const playerscivil = world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") !== player.getDynamicProperty("doclan")).map(p => p.name)
+    if ( playerscivil.length == 0){ player.sendMessage("Não há civil para convidar"); return; }
+
     const formConviteMembro = new ModalFormData()
         .title("Convidar Membro")
-        .dropdown("  Selecione um jogador para convidar\n\n\n", world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") !== player.getDynamicProperty("doclan")).map(p => p.name), player)// Retorna os nomes de todos os civis
+        .dropdown("  Selecione um jogador para convidar\n\n\n", playerscivil, player)// Retorna os nomes de todos os civis
         .show(player)
         .then((response) => {
             if (response.canceled) return; 
-            else {
-            const jogadorSelecionado = world.getAllPlayers()[response.formValues[0]];
             
-            Mostrarconvite(jogadorSelecionado, player.getDynamicProperty("doclan"), player );
+            const jogadorSelecionado = playerscivil[response.formValues[0]];
+            
+
+
+
+            Mostrarconvite(jogadorSelecionado, player.getDynamicProperty("doclan"), player.name );
             //targetPlayer.addTag(`convite_clan_${player.getTags().find(tag => tag.startsWith("clan_"))}`)
             player.sendMessage(`Você convidou ${jogadorSelecionado.name} para o seu clã` );
             console.log("teste " + JSON.stringify(response.formValues));
 
             //aqui vai a logica para convidar o l x
             //  jogador para o clan, como verificar se o jogador existe, se ele tem clan, enviar a mensagem de convite, etc
-            }
+            
             
         })
 } //feito mas nao testado
 
-function Mostrarconvite(player, doclan, lider){
+function Mostrarconvite(JogadorConvidado, doclan, lider){
     const form_convite = new MessageFormData();
     form_convite.title("Você foi convidado para participar de um clã!!!");
-    form_convite.body(`${lider.name} convidou voce para participar do clã: ${doclan}`);
+    form_convite.body(`${lider} convidou voce para participar do clã: ${doclan}`);
     form_convite.button1("Aceitar convite");
     form_convite.button2("Recusar convite");
     form_convite.show(player).then((response) => {
         if (response.canceled) return;
         else {
                 if (response.selection == 0){
-                    player.setDynamicProperty("doclan", doclan);
+                    DbAdcionarMembro(JogadorConvidado.name, doclan).then(res => {
+                        if (res.status === 200) {
+                            player.setDynamicProperty("doclan", doclan);
                     player.setDynamicProperty("nivelClan", 1);
                     player.sendMessage("Parabens! Você agora faz parte do clã --> " + doclan);
+                    console.log(res.body);
+                    console.log("Slavo");
+                        }
+                        else {player.sendMessage(`Erro ao convidar o player: ${res.status}`); return;}
+                    })
+
+
                     
                 }
                 else{
-                    lider.sendMessage(player.name + " §cRecusou o convite")
+                    lider.sendMessage(JogadorConvidado.name + " §cRecusou o convite")
                     return;
                 }                
         }
 });
+}
+function DbAdcionarMembro(convidado, entrou_no_clanName){
+    const requisitar = new HttpRequest("http://localhost:3000/adicionarMembro");
+    requisitar.method = HttpRequestMethod.Post;
+    requisitar.body = JSON.stringify({ nome: entrou_no_clanName, membros: convidado });
+    requisitar.headers = [new HttpHeader("Content-Type", "application/json")];
+    return http.request(requisitar);
 }
 
 
@@ -213,8 +234,7 @@ function Mostrarconvite(player, doclan, lider){
 
 
 
-
-export function MostrarClans(player, variavel){
+export function MostrarClans(player, variavel){// §c Finalizado
     const formClanList = new ActionFormData();
     let texto = "";
     formClanList.title("Clãs Existentes");

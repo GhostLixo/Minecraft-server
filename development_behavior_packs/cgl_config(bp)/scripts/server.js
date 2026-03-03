@@ -17,23 +17,33 @@ async function main() {
     const dados = await jogadores.find({}, { projection: { xp: 1, fabricio: 1, _id: 0 } }).toArray();
     res.json(dados);
   }); 
+
+
   app.get("/dbClan", async (req, res) => { 
     const teste = await clans.find({}, { projection: { nome: 1, _id: 0 } }).toArray();
     res.json(teste);
   });
 
-  // POST — salvar clã
-  app.post("/clans", async (req, res) => { // ✅ FIX 3 — rota corrigida para /clans (igual ao Minecraft)
+  // POST — Cria e Salva o clã
+  app.post("/teste", async (req, res) => { // ✅ FIX 3 — rota corrigida para /clans (igual ao Minecraft)
     try {
-      const { nome } = req.body;
+      const { nome, ListaMembros } = req.body;
       if (!nome) return res.status(400).json({ erro: "nome obrigatório" });
-
-      await clans.insertOne({ nome, criadoEm: Date.now() });
+      await clans.insertOne({ nome, ListaMembros, criadoEm: Date.now() });
       res.status(200).json({ status: "ok", nome });
     } catch (err) {
       res.status(500).json({ erro: err.message });
     }
+
+
   });
+  app.post("/adicionarMembro", async (req, res) => {
+    const { nome, membros } = req.body;
+    await dbClan.updateOne(
+        { nome: nome },
+        { $push: { membros: membros } }
+    );
+   });
 
   app.listen(3000, () => console.log("✅ API rodando na porta 3000"));
 }
