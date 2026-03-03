@@ -3,12 +3,13 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { formmeuclan,  formconvitarMembro,
     form_membrosclan, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
-    form_sairclan, formcriaclan, arrayclan, MostrarClans} from  "./clan_ex"
+    form_sairclan, formcriaclan, arrayclan, MostrarClans, DBCarregarClanName } from  "./clan_ex"
 
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
         const item = ev.itemStack
         const player = ev.source
+        DBCarregarClanName();
 
         if (item.typeId === "minecraft:compass") {
             abrirMenuPrincipal(player);
@@ -348,6 +349,7 @@ const formMenuClan = new ActionFormData()
             if (player.getDynamicProperty("doclan") === undefined) {
                 player.setDynamicProperty("doclan", "civil");
             }
+
         }
     });
 

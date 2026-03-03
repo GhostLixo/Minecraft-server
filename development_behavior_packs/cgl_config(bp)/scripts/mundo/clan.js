@@ -1,4 +1,25 @@
 import {world, system, CommandPermissionLevel, CustomCommandStatus } from "@minecraft/server";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Bloco de teste
 world.beforeEvents.chatSend.subscribe((ev) => {
     if (ev.message == "!aceitarconvite"){

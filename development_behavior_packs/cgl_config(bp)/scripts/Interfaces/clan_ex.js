@@ -1,46 +1,93 @@
 import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui";
 import { system, world } from "@minecraft/server";
-export let arrayclan = [];
-let infoClan = [
-    {   nome: "",
-        QuantidadeMembro: 0
+import { http, HttpRequest, HttpRequestMethod, HttpHeader } from "@minecraft/server-net"
 
-}]
+export let arrayclan = [];
+
 
 
 function SalvaInfoClan(){
     
 }
 
+export async function DBCarregarClanName(){
 
+    const requisitar = new HttpRequest("http://localhost:3000/dbClan");
+    requisitar.method = HttpRequestMethod.Get;
 
-
-
-
-
-
-function carregarClans() {
-    system.run(() => {
-    const clansSalvos = world.getDynamicProperty("clans");
-    
-    if (clansSalvos) {
-        try {
-            // Transforma o texto JSON de volta para uma Array
-            arrayclan = JSON.parse(clansSalvos); 
-            console.warn(`[Sistema de Clãs] ${arrayclan.length} clãs carregados com sucesso!`);
-        } catch (error) {
-            console.error("Erro ao carregar clãs. Iniciando lista vazia.");
-            arrayclan = [];
-        }
-    } else {
-        arrayclan = []; // Se não houver nada salvo, inicia vazio
+    const resposta = await http.request(requisitar);
+    if (resposta.status === 200){
+        const dados = JSON.parse(resposta.body);      // [ { nome: "ClanA" }, { nome: "ClanB" } ]
+        arrayclan = dados.map(clan => clan.nome);
+        console.log("Consulta == " + JSON.parse(resposta.body));
+        console.log("Consulta == " + typeof(JSON.parse(resposta.body)));
     }
-    });
+    else{
+        console.log("Erro ao buscar dados: " + resposta.status);
+    }    
 }
+
+
+export function formcriaclan(player) {
+    const formCreateClan = new ModalFormData()
+        formCreateClan
+        .title("Criar Clã")
+        .textField("Preencha os campos abaixo para criar seu clã\n\nNome do Clã", "Digite o nome do seu clan")
+        //.textField("Tag do Clan", "Digite a tag do seu clan")
+        //.toggle("Clan privado?", {defaultValue: false}) 
+        .show(player)
+        .then((response) => {
+            if (response.canceled) return;
+            
+            const clanName = response.formValues[0];
+            //const clanTag = response.formValues[1];
+            //const isPrivate = response.formValues[2];
+salvarClan(clanName).then(res => {
+        if (res.status === 200) {
+          player.sendMessage(`Clã ${clanName} salvo no banco de dados!`);
+          console.log(res.body);
+          console.log("Slavo");
+        } else {
+          player.sendMessage(`Erro ao salvar clã: ${res.status}`);
+        }
+      });
+
+            player.addTag(`clan_${clanName}`);
+            player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
+            player.setDynamicProperty("doclan", clanName);
+            player.sendMessage(`Você criou o clan ${clanName}`);
+        
+            //aqui vai a logica para criar o clan, como verificar se o nome e tag ja existe, 
+            // criar o clan no banco de dados, adicionar o jogador como lider do clan, etc
+        });
+} 
+
+
+
+// function carregarClansNome() {
+
+    
+//     system.run(() => {
+//     const clansSalvos = world.getDynamicProperty("clans");
+    
+//     if (clansSalvos) {
+//         try {
+//             // Transforma o texto JSON de volta para uma Array
+//             arrayclan = JSON.parse(clansSalvos); 
+//             console.warn(`[Sistema de Clãs] ${arrayclan.length} clãs carregados com sucesso!`);
+//         } catch (error) {
+//             console.error("Erro ao carregar clãs. Iniciando lista vazia.");
+//             arrayclan = [];
+//         }
+//     } else {
+//         arrayclan = []; // Se não houver nada salvo, inicia vazio
+//     }
+//     });
+// }
 
 // Executa a função de carregar assim que o script ligar
 
-carregarClans();
+// carregarClansNome();
 
 
 
@@ -51,56 +98,74 @@ export function formmeuclan(player) {// Formulario UI
 
 
 
-export function formcriaclan(player) {
-    const formCreateClan = new ModalFormData()
-        formCreateClan
-        .title("Criar Clã")
-        .textField("Preencha os campos abaixo para criar seu clã\n\nNome do Clã", "Digite o nome do seu clan")
-        .textField("Tag do Clan", "Digite a tag do seu clan")
-        .toggle("Clan privado?", {defaultValue: false}) 
-        .show(player)
-        .then((response) => {
-            if (response.canceled) return;
-            
-            const clanName = response.formValues[0];
-            const clanTag = response.formValues[1];
-            const isPrivate = response.formValues[2];
 
-            const criado = adicionarClan(clanTag);
-            if (criado){
-            player.addTag(`clan_${clanName}`);
-            player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
-            player.setDynamicProperty("doclan", clanTag);
-            player.sendMessage(`Você criou o clan ${clanName} com a tag ${clanTag} e privacidade ${isPrivate}`);
-            }
-            //aqui vai a logica para criar o clan, como verificar se o nome e tag ja existe, 
-            // criar o clan no banco de dados, adicionar o jogador como lider do clan, etc
-        });
-} 
-function adicionarClan(nome) {
-    // Cria o objeto do clã
-    const novoClan = [nome];
 
-    // Adiciona na lista
-    arrayclan.push(novoClan);
 
-    // Salva no mundo para persistir
-    world.setDynamicProperty("clans", JSON.stringify(arrayclan));
-
-    return true;
+function salvarClan(clanName) {
+  const request = new HttpRequest("http://localhost:3000/clans");
+  request.method = HttpRequestMethod.Post;
+  request.body = JSON.stringify({ nome: clanName });
+request.headers = [new HttpHeader("Content-Type", "application/json")];
+  return http.request(request);
 }
 
 
+
+export function DeixarBilhete(player){
+
+}
+
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function formconvitarMembro(player) {
-    //const convidado
+    
+    
+    
     const formConviteMembro = new ModalFormData()
         .title("Convidar Membro")
-        .dropdown("  Selecione um jogador para convidar\n\n\n", world.getAllPlayers().map(p => p.name), player)// Retorna os nomes de todos os civis
+        .dropdown("  Selecione um jogador para convidar\n\n\n", world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") !== player.getDynamicProperty("doclan")).map(p => p.name), player)// Retorna os nomes de todos os civis
         .show(player)
         .then((response) => {
-            if (response.canceled) return;
+            if (response.canceled) return; 
             else {
             const jogadorSelecionado = world.getAllPlayers()[response.formValues[0]];
+            
             Mostrarconvite(jogadorSelecionado, player.getDynamicProperty("doclan"), player );
             //targetPlayer.addTag(`convite_clan_${player.getTags().find(tag => tag.startsWith("clan_"))}`)
             player.sendMessage(`Você convidou ${jogadorSelecionado.name} para o seu clã` );
