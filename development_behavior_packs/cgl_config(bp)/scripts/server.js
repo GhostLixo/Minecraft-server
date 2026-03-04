@@ -18,14 +18,14 @@ async function main() {
     res.json(dados);
   }); 
 
-
-  app.get("/dbClan", async (req, res) => { 
+// Retornar e consulta o nome de todos os clãs
+  app.get("/carregarClanNames", async (req, res) => { 
     const teste = await clans.find({}, { projection: { nome: 1, _id: 0 } }).toArray();
     res.json(teste);
   });
 
   // POST — Cria e Salva o clã
-  app.post("/teste", async (req, res) => { // ✅ FIX 3 — rota corrigida para /clans (igual ao Minecraft)
+  app.post("/SalvaClan", async (req, res) => { // ✅ FIX 3 — rota corrigida para /clans (igual ao Minecraft)
     try {
       const { nome, ListaMembros } = req.body;
       if (!nome) return res.status(400).json({ erro: "nome obrigatório" });
@@ -38,10 +38,10 @@ async function main() {
 
   });
   app.post("/adicionarMembro", async (req, res) => {
-    const { nome, membros } = req.body;
-    await dbClan.updateOne(
+    const { nome, ADDmembro } = req.body;
+    await clans.updateOne(
         { nome: nome },
-        { $push: { membros: membros } }
+        { $push: { ListaMembros: ADDmembro } }
     );
    });
 

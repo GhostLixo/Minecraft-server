@@ -3,7 +3,9 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { formmeuclan,  formconvitarMembro,
     form_membrosclan, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
-    form_sairclan, formcriaclan, arrayclan, MostrarClans, DBCarregarClanName } from  "./clan_ex"
+    form_sairclan, formcriaclan, arrayclan, MostrarClans, DBCarregarClanName, DeixarBilhete,
+    VerBilhete, TextoBilhete} from  "./clan_ex"
+
 
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
@@ -239,6 +241,23 @@ const formMenuClan = new ActionFormData()
                 break;
                 case 2:// Bilhetes
                 console.log("case2 nivel 1");
+                if (TextoBilhete.length == 0){
+                    const aviso = "Não há bilhetes no momento..."
+                    VerBilhete(player, aviso);
+                    console.log("simasas");
+                }else {
+                    for (let x in TextoBilhete){
+                        if (TextoBilhete[x].clanName == player.getDynamicProperty("doclan")){
+                            VerBilhete(player, TextoBilhete[x].recado)
+                    }else {
+                        console.log("Não tem bilhete para voce");
+                    }
+
+                }
+            }
+                console.log("Bilhete 1 --> " ,TextoBilhete.length);
+                //VerBilhete(player, TextoBilhete[0].recado);
+                
                 break;
                 case 3:// Membros
                 console.log("case3 nivel 1");
@@ -260,6 +279,9 @@ const formMenuClan = new ActionFormData()
                 break;
                 case 2:// Bilhetes
                 console.log("case2 nivel 2");
+                console.log("Bilhete 1 --> " ,TextoBilhete[0].recado)
+                //VerBilhete(player, TextoBilhete[0].recado);
+                
                 break;
                 case 3:// Membros
                 console.log("case3 nivel 2");
@@ -281,6 +303,7 @@ const formMenuClan = new ActionFormData()
                 //formlistclans(player)
                 break;
             case 2:
+                DeixarBilhete(player)
                 console.log("case2");
                 //formconvitarMembro(player)
                 break;
