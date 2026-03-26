@@ -1901,6 +1901,9 @@ var __webpack_exports__ = {};
         ["LayoutFlex"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.LayoutFlex,
         ["LayoutSizeType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.LayoutSizeType,
         ["ListPaneEntryType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ListPaneEntryType,
+        ["ListPaneSlotVariant"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ListPaneSlotVariant,
+        ["ListPaneViewSortType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ListPaneViewSortType,
+        ["ListViewControlFilterFlags"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ListViewControlFilterFlags,
         ["LogChannel"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.LogChannel,
         ["ModalDialogResponseType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ModalDialogResponseType,
         ["MouseActionType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.MouseActionType,
@@ -1919,7 +1922,9 @@ var __webpack_exports__ = {};
         ["StatusBarAlignment"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.StatusBarAlignment,
         ["StructureSource"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.StructureSource,
         ["ThemeSettingsColorKey"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.ThemeSettingsColorKey,
+        ["TransactionManagerNoChangesError"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.TransactionManagerNoChangesError,
         ["WidgetCollisionType"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.WidgetCollisionType,
+        ["WidgetComponentRenderPrimitiveTypeAxialSphere"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.WidgetComponentRenderPrimitiveTypeAxialSphere,
         ["WidgetComponentRenderPrimitiveTypeBox"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.WidgetComponentRenderPrimitiveTypeBox,
         ["WidgetComponentRenderPrimitiveTypeDisc"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.WidgetComponentRenderPrimitiveTypeDisc,
         ["WidgetComponentRenderPrimitiveTypeLine"]: () => __WEBPACK_EXTERNAL_MODULE__minecraft_server_editor_81aed4a5__.WidgetComponentRenderPrimitiveTypeLine,
@@ -5346,8 +5351,14 @@ var __webpack_exports__ = {};
             context.transactionManager.discardOpenTransaction();
             throw e;
         })).then((() => {
-            if (!context.transactionManager.commitOpenTransaction()) {
-                throw Error("Failed to commit transaction");
+            context.transactionManager.commitOpenTransaction();
+        })).catch((e => {
+            if (e instanceof TransactionManagerNoChangesError) {
+                logger.warning("resourcePack.editor.blockOperation.noChanges", {
+                    channelMask: LogChannel.All
+                });
+            } else {
+                throw e;
             }
         }));
     }
@@ -5367,8 +5378,14 @@ var __webpack_exports__ = {};
                 context.transactionManager.discardOpenTransaction();
                 throw e;
             })).then((() => {
-                if (!context.transactionManager.commitOpenTransaction()) {
-                    throw Error("Failed to commit transaction");
+                context.transactionManager.commitOpenTransaction();
+            })).catch((e => {
+                if (e instanceof server_editor_namespaceObject.TransactionManagerNoChangesError) {
+                    logger.warning("resourcePack.editor.blockOperation.noChanges", {
+                        channelMask: server_editor_namespaceObject.LogChannel.All
+                    });
+                } else {
+                    throw e;
                 }
             }));
         }));
@@ -5396,8 +5413,14 @@ var __webpack_exports__ = {};
             context.transactionManager.discardOpenTransaction();
             throw e;
         })).then((() => {
-            if (!context.transactionManager.commitOpenTransaction()) {
-                throw Error("Failed to commit transaction");
+            context.transactionManager.commitOpenTransaction();
+        })).catch((e => {
+            if (e instanceof server_editor_namespaceObject.TransactionManagerNoChangesError) {
+                logger.warning("resourcePack.editor.blockOperation.noChanges", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
+            } else {
+                throw e;
             }
         }));
     }
@@ -5641,14 +5664,25 @@ var __webpack_exports__ = {};
     function nearEqual(a, b) {
         return Math.abs(a - b) < .001;
     }
-    function calculateYPlaneIntersection(pointOnPlane, rayOrigin, rayDirection) {
-        const normal = lib.VECTOR3_UP;
+    function calculatePlaneIntersection(pointOnPlane, rayOrigin, rayDirection, planeMask = {
+        x: 1,
+        y: 0,
+        z: 1
+    }) {
+        const normal = {
+            x: 1 - planeMask.x,
+            y: 1 - planeMask.y,
+            z: 1 - planeMask.z
+        };
         const dotProduct = lib.Vector3Utils.dot(rayDirection, normal);
         if (nearEqual(dotProduct, 0)) {
             return undefined;
         }
         const popMinusRayO = lib.Vector3Utils.subtract(pointOnPlane, rayOrigin);
         const t = lib.Vector3Utils.dot(popMinusRayO, normal) / dotProduct;
+        if (t < 0) {
+            return undefined;
+        }
         const rayProjection = lib.Vector3Utils.scale(rayDirection, t);
         const rawIntersection = lib.Vector3Utils.add(rayOrigin, rayProjection);
         return lib.Vector3Utils.floor(rawIntersection);
@@ -7434,6 +7468,7 @@ var __webpack_exports__ = {};
     }
     const PERSISTENCE_GROUP_NAME = "editor:brushpaint";
     const PERSISTENCE_GROUPITEM_SETTINGS = "settings";
+    const PERSISTENCE_SELECTED_BRUSH_INDEX = "selected_brush_index";
     const PROPERTY_BRUSHPAINTCONTROL_NAME = "BrushPaintControl";
     const PROPERTY_BRUSHPAINTCONTROL_LOCALIZATION_PREFIX = `resourcePack.editor.${PROPERTY_BRUSHPAINTCONTROL_NAME}`;
     var InternalMaskType;
@@ -7461,6 +7496,15 @@ var __webpack_exports__ = {};
         get isUIConstructed() {
             return this._brushSettingsSubPane !== undefined;
         }
+        get selectedBrushShape() {
+            return this._getSelectedBrushShape();
+        }
+        get brushShapeOffset() {
+            return this._brushShapeOffset.value;
+        }
+        displayShapeSettings(value) {
+            this._displayShapeSettings = value;
+        }
         constructor(session, parentTool, parentPropertyPane, _brushSettings, _brushShapes, _options) {
             super(session, parentTool, parentPropertyPane, PROPERTY_BRUSHPAINTCONTROL_NAME, PROPERTY_BRUSHPAINTCONTROL_LOCALIZATION_PREFIX);
             this._brushShapes = _brushShapes;
@@ -7487,6 +7531,7 @@ var __webpack_exports__ = {};
             this._updateSettingsOperationTickHandle = undefined;
             this._editorMode = server_editor_namespaceObject.EditorMode.Tool;
             this._needsRefresh = false;
+            this._displayShapeSettings = true;
             this._blockMaskKey = `${this.tool.id}_BlockMask_Mask`;
             this._blockReplaceKey = `${this.tool.id}_BlockMask_Replace`;
             this._persistenceManager = getPersistenceManager(session.extensionContext.player);
@@ -7650,16 +7695,24 @@ var __webpack_exports__ = {};
             this.session.extensionContext.brushShapeManager.setBrushShapeVisible(false);
         }
         switchBrushPaintMode(paintMode) {
+            this._saveBrushSettings();
             this._brushSettings.paintMode = paintMode;
             this.session.extensionContext.brushShapeManager.switchBrushPaintMode(paintMode);
         }
         updateBrushShapes(shapes) {
             this._brushShapes = shapes;
+            this._loadBrushSettings();
             if (this._brushShapeDropdown) {
                 this._brushShapeDropdown.updateEntries(this._getBrushShapeDropdownEntries());
             }
+            this._updateSettingsSubPane();
             if (this.isActive) {
                 this._setBrushVolume();
+            }
+        }
+        toggleFillConstraintsVisibility(visible) {
+            if (this._fillConstraintsSubPane && visible !== this._fillConstraintsSubPane?.visible) {
+                visible ? this._fillConstraintsSubPane.show() : this._fillConstraintsSubPane.hide();
             }
         }
         _setupBrushModeAndType() {
@@ -7688,19 +7741,19 @@ var __webpack_exports__ = {};
                 hasMargins: this._options?.hasPaneMargins
             });
             {
-                if (this._brushShapes.length > 1) {
-                    this._brushShapeDropdown = this._brushControlRootPane.addDropdown(this._selectedBrushIndex, {
-                        title: this._locFunction(BrushPaintControlStringKeys.BrushShapeSelectionTitle),
-                        tooltip: this._locFunction(BrushPaintControlStringKeys.BrushShapeSelectionTooltip),
-                        entries: this._getBrushShapeDropdownEntries(),
-                        onChange: () => {
-                            this._setBrushVolume();
-                            this._updateSettingsSubPane();
-                        }
-                    });
-                } else {
-                    this._brushShapeDropdown = undefined;
+                if (this._brushShapes.length <= 1) {
+                    this._displayShapeSettings = false;
                 }
+                this._brushShapeDropdown = this._brushControlRootPane.addDropdown(this._selectedBrushIndex, {
+                    title: this._locFunction(BrushPaintControlStringKeys.BrushShapeSelectionTitle),
+                    tooltip: this._locFunction(BrushPaintControlStringKeys.BrushShapeSelectionTooltip),
+                    entries: this._getBrushShapeDropdownEntries(),
+                    onChange: () => {
+                        this._setBrushVolume();
+                        this._updateSettingsSubPane();
+                        this._options?.onShapeChange?.(this._getSelectedBrushShape());
+                    }
+                });
                 this._brushShapeOffset.set(this.session.extensionContext.brushShapeManager.getBrushShapeOffset());
                 this._brushControlRootPane.addVector3(this._brushShapeOffset, {
                     title: this._locFunction(BrushPaintControlStringKeys.OffsetTitle),
@@ -7710,6 +7763,7 @@ var __webpack_exports__ = {};
                     max: BrushPaintSharedControl.MAX_OFFSET,
                     onChange: newValue => {
                         this.session.extensionContext.brushShapeManager.setBrushShapeOffset(newValue);
+                        this._options?.onOffsetChange?.(newValue);
                     }
                 });
             }
@@ -7721,84 +7775,86 @@ var __webpack_exports__ = {};
                 }
             });
             this._updateSettingsSubPane();
-            this._fillConstraintsSubPane = this._brushControlRootPane.createSubPane({
-                title: this._locFunction(BrushPaintControlStringKeys.FillConstraintsTitle),
-                infoTooltip: {
+            if (!this._options?.hideFillConstraints) {
+                this._fillConstraintsSubPane = this._brushControlRootPane.createSubPane({
                     title: this._locFunction(BrushPaintControlStringKeys.FillConstraintsTitle),
-                    description: [ this._locFunction(BrushPaintControlStringKeys.FillConstraintsTooltip) ]
-                }
-            });
-            this._fillConstraintsSubPane.addToggleGroup(this._internalMaskType, {
-                title: this._locFunction(BrushPaintControlStringKeys.MaskModeTitle),
-                tooltip: this._locFunction(BrushPaintControlStringKeys.MaskModeTooltip),
-                entries: [ {
-                    value: InternalMaskType.Disabled,
-                    icon: "squareIcon",
-                    tooltip: {
-                        title: {
-                            id: this.localize("fillConstraints.maskMode.disabled"),
+                    infoTooltip: {
+                        title: this._locFunction(BrushPaintControlStringKeys.FillConstraintsTitle),
+                        description: [ this._locFunction(BrushPaintControlStringKeys.FillConstraintsTooltip) ]
+                    }
+                });
+                this._fillConstraintsSubPane.addToggleGroup(this._internalMaskType, {
+                    title: this._locFunction(BrushPaintControlStringKeys.MaskModeTitle),
+                    tooltip: this._locFunction(BrushPaintControlStringKeys.MaskModeTooltip),
+                    entries: [ {
+                        value: InternalMaskType.Disabled,
+                        icon: "squareIcon",
+                        tooltip: {
+                            title: {
+                                id: this.localize("fillConstraints.maskMode.disabled"),
+                                props: [ getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
+                            },
+                            description: {
+                                id: this.localize("fillConstraints.maskMode.disabled.tooltip"),
+                                props: [ newLineMarkup + newLineMarkup, getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
+                            }
+                        }
+                    }, {
+                        label: {
+                            id: this.localize("fillConstraints.maskMode.mask"),
                             props: [ getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
                         },
-                        description: {
-                            id: this.localize("fillConstraints.maskMode.disabled.tooltip"),
+                        value: InternalMaskType.Mask,
+                        icon: "pack://textures/editor/mask.png",
+                        tooltip: {
+                            id: this.localize("fillConstraints.maskMode.mask.tooltip"),
                             props: [ newLineMarkup + newLineMarkup, getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
                         }
+                    }, {
+                        label: {
+                            id: this.localize("fillConstraints.maskMode.replace"),
+                            props: [ getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
+                        },
+                        value: InternalMaskType.Replace,
+                        icon: "pack://textures/editor/replace.png",
+                        tooltip: {
+                            id: this.localize("fillConstraints.replace.tooltip"),
+                            props: [ newLineMarkup + newLineMarkup, getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
+                        }
+                    } ],
+                    onChange: () => {
+                        this._switchBrushMaskPanes();
+                        this._setBrushMask();
                     }
-                }, {
-                    label: {
-                        id: this.localize("fillConstraints.maskMode.mask"),
-                        props: [ getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
-                    },
-                    value: InternalMaskType.Mask,
-                    icon: "pack://textures/editor/mask.png",
-                    tooltip: {
-                        id: this.localize("fillConstraints.maskMode.mask.tooltip"),
-                        props: [ newLineMarkup + newLineMarkup, getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
-                    }
-                }, {
-                    label: {
-                        id: this.localize("fillConstraints.maskMode.replace"),
-                        props: [ getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
-                    },
-                    value: InternalMaskType.Replace,
-                    icon: "pack://textures/editor/replace.png",
-                    tooltip: {
-                        id: this.localize("fillConstraints.replace.tooltip"),
-                        props: [ newLineMarkup + newLineMarkup, getInputMarkup(this.getToolKeyBindingId("maskMask")) ]
-                    }
-                } ],
-                onChange: () => {
-                    this._switchBrushMaskPanes();
-                    this._setBrushMask();
+                });
+                {
+                    this._fillReplaceSubPane = this._fillConstraintsSubPane.createSubPane({
+                        title: this.localize("fillConstraints.replace.title")
+                    });
+                    this._blockListReplaceIds.set(convertBlockTypesToBlockStrings(this._blockListReplace));
+                    this._fillReplaceSubPane?.addBlockList(this._blockListReplaceIds, {
+                        onChange: newVal => {
+                            this._blockListReplace = convertBlockStringsToBlockType(newVal);
+                            this._setBrushMask();
+                            this._saveBlockMasks();
+                        }
+                    });
+                    this._fillReplaceSubPane.hide();
                 }
-            });
-            {
-                this._fillReplaceSubPane = this._fillConstraintsSubPane.createSubPane({
-                    title: this.localize("fillConstraints.replace.title")
-                });
-                this._blockListReplaceIds.set(convertBlockTypesToBlockStrings(this._blockListReplace));
-                this._fillReplaceSubPane?.addBlockList(this._blockListReplaceIds, {
-                    onChange: newVal => {
-                        this._blockListReplace = convertBlockStringsToBlockType(newVal);
-                        this._setBrushMask();
-                        this._saveBlockMasks();
-                    }
-                });
-                this._fillReplaceSubPane.hide();
-            }
-            {
-                this._fillMaskSubPane = this._fillConstraintsSubPane.createSubPane({
-                    title: this.localize("fillConstraints.mask.title")
-                });
-                this._blockListMaskIds.set(convertBlockTypesToBlockStrings(this._blockListMask));
-                this._fillMaskSubPane?.addBlockList(this._blockListMaskIds, {
-                    onChange: newVal => {
-                        this._blockListMask = convertBlockStringsToBlockType(newVal);
-                        this._setBrushMask();
-                        this._saveBlockMasks();
-                    }
-                });
-                this._fillMaskSubPane.hide();
+                {
+                    this._fillMaskSubPane = this._fillConstraintsSubPane.createSubPane({
+                        title: this.localize("fillConstraints.mask.title")
+                    });
+                    this._blockListMaskIds.set(convertBlockTypesToBlockStrings(this._blockListMask));
+                    this._fillMaskSubPane?.addBlockList(this._blockListMaskIds, {
+                        onChange: newVal => {
+                            this._blockListMask = convertBlockStringsToBlockType(newVal);
+                            this._setBrushMask();
+                            this._saveBlockMasks();
+                        }
+                    });
+                    this._fillMaskSubPane.hide();
+                }
             }
         }
         _getBlockMaskListTypeFromInternalMaskType(internalMaskType) {
@@ -7868,7 +7924,42 @@ var __webpack_exports__ = {};
             }
             return this._brushShapes[currentBrushIndex];
         }
+        _clampToMaxBlockVolume(brushShape, maxBlockVolume) {
+            const currentBlockCount = brushShape.estimateBlockCount();
+            if (currentBlockCount <= maxBlockVolume) {
+                return;
+            }
+            const settings = brushShape.getSettings();
+            if (!settings) {
+                return;
+            }
+            const SAFETY_MARGIN = .95;
+            const scaleFactor = Math.cbrt(maxBlockVolume / currentBlockCount) * SAFETY_MARGIN;
+            const clampDimension = value => Math.max(1, Math.floor(value * scaleFactor));
+            const clampedSettings = {
+                ...settings
+            };
+            if ("width" in clampedSettings && typeof clampedSettings.width === "number") {
+                clampedSettings.width = clampDimension(clampedSettings.width);
+            }
+            if ("height" in clampedSettings && typeof clampedSettings.height === "number") {
+                clampedSettings.height = clampDimension(clampedSettings.height);
+            }
+            if ("depth" in clampedSettings && typeof clampedSettings.depth === "number") {
+                clampedSettings.depth = clampDimension(clampedSettings.depth);
+            }
+            if ("radius" in clampedSettings && typeof clampedSettings.radius === "number") {
+                clampedSettings.radius = clampDimension(clampedSettings.radius);
+            }
+            brushShape.applySetting(clampedSettings);
+            this._needsRefresh = true;
+            const newBlockCount = brushShape.estimateBlockCount();
+            this._options?.onVolumeClamped?.(newBlockCount, maxBlockVolume);
+        }
         _setBrushVolume() {
+            if (this._options?.shouldSkipBrushVolumeUpdate?.()) {
+                return;
+            }
             try {
                 const brush = this._getSelectedBrushShape();
                 this.session.extensionContext.brushShapeManager.setBrushShape(brush.createShape());
@@ -7896,6 +7987,13 @@ var __webpack_exports__ = {};
             this._customSettingsSubPane = brushShape.createSettingsPane(this._brushSettingsSubPane, (() => {
                 this._needsRefresh = true;
                 this._saveBrushSettings();
+                if (this._options?.maxBlockVolume) {
+                    const currentBlockCount = brushShape.estimateBlockCount();
+                    if (currentBlockCount > this._options.maxBlockVolume) {
+                        this._clampToMaxBlockVolume(brushShape, this._options.maxBlockVolume);
+                    }
+                }
+                this._options?.onSettingsChange?.(brushShape);
             }));
             this._customSettingsSubPane?.show();
             if (this._customSettingsSubPane) {
@@ -7904,6 +8002,12 @@ var __webpack_exports__ = {};
                 this._brushSettingsSubPane.hide();
             }
             this._brushControlRootPane.show();
+            if (!this._displayShapeSettings) {
+                this._brushSettingsSubPane.hide();
+            }
+            if (this._brushShapeDropdown) {
+                this._brushShapeDropdown.visible = this._displayShapeSettings;
+            }
         }
         _runUpdateOperation() {
             if (this.isActive && this._needsRefresh) {
@@ -7982,85 +8086,108 @@ var __webpack_exports__ = {};
             }));
         }
         _loadBrushSettings() {
-            this._brushShapes.map((brushShape => {
-                const option = {
-                    scope: server_editor_private_bindings_namespaceObject.PersistenceScope.ServerProject
-                };
-                const group = this._persistenceManager.getGroup(PERSISTENCE_GROUP_NAME, option);
-                if (!group) {
-                    return;
-                }
-                const key = `${this.tool.id}.${brushShape.id}.${PERSISTENCE_GROUPITEM_SETTINGS}`;
-                try {
-                    switch (brushShape.id) {
-                      case server_editor_namespaceObject.CoreBrushShapeType.Cone:
-                        {
-                            const item = group.fetchItem(key);
-                            if (item && item.value) {
-                                brushShape.applySetting(item.value);
+            const option = {
+                scope: server_editor_private_bindings_namespaceObject.PersistenceScope.ServerProject,
+                version: 0
+            };
+            const brushGroup = this._persistenceManager.getGroup(PERSISTENCE_GROUP_NAME, option);
+            if (brushGroup) {
+                this._brushShapes.map((brushShape => {
+                    const key = `${this.tool.id}.${brushShape.id}.${PERSISTENCE_GROUPITEM_SETTINGS}`;
+                    try {
+                        switch (brushShape.id) {
+                          case server_editor_namespaceObject.CoreBrushShapeType.Cone:
+                            {
+                                const item = brushGroup.fetchItem(key);
+                                if (item && item.value) {
+                                    brushShape.applySetting(item.value);
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                      case server_editor_namespaceObject.CoreBrushShapeType.Cuboid:
-                        {
-                            const item = group.fetchItem(key);
-                            if (item && item.value) {
-                                brushShape.applySetting(item.value);
+                          case server_editor_namespaceObject.CoreBrushShapeType.Cuboid:
+                            {
+                                const item = brushGroup.fetchItem(key);
+                                if (item && item.value) {
+                                    brushShape.applySetting(item.value);
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                      case server_editor_namespaceObject.CoreBrushShapeType.Cylinder:
-                        {
-                            const item = group.fetchItem(key);
-                            if (item && item.value) {
-                                brushShape.applySetting(item.value);
+                          case server_editor_namespaceObject.CoreBrushShapeType.Cylinder:
+                            {
+                                const item = brushGroup.fetchItem(key);
+                                if (item && item.value) {
+                                    brushShape.applySetting(item.value);
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                      case server_editor_namespaceObject.CoreBrushShapeType.Ellipsoid:
-                        {
-                            const item = group.fetchItem(key);
-                            if (item && item.value) {
-                                brushShape.applySetting(item.value);
+                          case server_editor_namespaceObject.CoreBrushShapeType.Ellipsoid:
+                            {
+                                const item = brushGroup.fetchItem(key);
+                                if (item && item.value) {
+                                    brushShape.applySetting(item.value);
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                      case server_editor_namespaceObject.CoreBrushShapeType.Pyramid:
-                        {
-                            const item = group.fetchItem(key);
-                            if (item && item.value) {
-                                brushShape.applySetting(item.value);
+                          case server_editor_namespaceObject.CoreBrushShapeType.Pyramid:
+                            {
+                                const item = brushGroup.fetchItem(key);
+                                if (item && item.value) {
+                                    brushShape.applySetting(item.value);
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                      case server_editor_namespaceObject.CoreBrushShapeType.SingleBlock:
-                        break;
+                          case server_editor_namespaceObject.CoreBrushShapeType.SingleBlock:
+                            break;
+                        }
+                    } catch (e) {
+                        this.session.log.error(`Failed to load brush settings, ${stringFromException(e)}`);
                     }
-                } catch (e) {
-                    this.session.log.error(`Failed to load brush settings, ${stringFromException(e)}`);
+                }));
+                brushGroup.dispose();
+            }
+            const group = this._persistenceManager.getGroup(PERSISTENCE_GROUP_NAME, option);
+            if (!group) {
+                return;
+            }
+            const mode = this._brushSettings.paintMode;
+            const selectedBrushIndex = `${this.tool.id}.${mode}.${PERSISTENCE_SELECTED_BRUSH_INDEX}`;
+            this._selectedBrushIndex.set(0);
+            const item = group.fetchItem(selectedBrushIndex);
+            if (item && item.value !== undefined) {
+                const index = parseInt(item.value, 10);
+                if (index >= 0 && index < this._brushShapes.length) {
+                    this._selectedBrushIndex.set(index);
                 }
-                group.dispose();
-            }));
+            }
+            group.dispose();
         }
         _saveBrushSettings() {
+            const mode = this._brushSettings.paintMode;
             const brushShape = this._getSelectedBrushShape();
             const option = {
-                scope: server_editor_private_bindings_namespaceObject.PersistenceScope.ServerProject
+                scope: server_editor_private_bindings_namespaceObject.PersistenceScope.ServerProject,
+                version: 0
             };
             const group = this._persistenceManager.getOrCreateGroup(PERSISTENCE_GROUP_NAME, option);
             if (!group) {
                 this.session.log.error(`Failed to save brush settings of ${brushShape.displayName}`);
                 return;
             }
-            const key = `${this.tool.id}.${brushShape.id}.${PERSISTENCE_GROUPITEM_SETTINGS}`;
+            const key = `${this.tool.id}.${mode}.${brushShape.id}.${PERSISTENCE_GROUPITEM_SETTINGS}`;
             const item = group.getOrCreateItem(key, brushShape.getSettings());
             if (item && item.value) {
                 item.commit();
+            }
+            const selectedBrushIndexKey = `${this.tool.id}.${mode}.${PERSISTENCE_SELECTED_BRUSH_INDEX}`;
+            const selectedBrushItem = group.getOrCreateItem(selectedBrushIndexKey, this._selectedBrushIndex.value.toString());
+            if (selectedBrushItem) {
+                selectedBrushItem.value = this._selectedBrushIndex.value.toString();
+                selectedBrushItem.commit();
             }
             group.dispose();
         }
@@ -8068,14 +8195,14 @@ var __webpack_exports__ = {};
     BrushPaintSharedControl.DEFAULT_NUMBER_MIN = 1;
     BrushPaintSharedControl.DEFAULT_NUMBER_MAX = 6;
     BrushPaintSharedControl.MIN_OFFSET = {
-        x: -20,
-        y: -20,
-        z: -20
+        x: -100,
+        y: -100,
+        z: -100
     };
     BrushPaintSharedControl.MAX_OFFSET = {
-        x: 20,
-        y: 20,
-        z: 20
+        x: 100,
+        y: 100,
+        z: 100
     };
     const CursorModeControl_PERSISTENCE_GROUP_NAME = "editor:cursor";
     const PERSISTENCE_GROUPITEM_NAME = "cursor_settings";
@@ -8852,6 +8979,10 @@ var __webpack_exports__ = {};
                 tooltip: "resourcePack.editor.exportProject.initialPlaySettings.usePlayerAsSpawnPoint.tooltip",
                 enable: this._isPlayerAsSpawnPointPropItemEnabled(this._uiSession.extensionContext.player.dimension)
             });
+            generalSettingsPane.addBool(this._worldSettingsPaneData.keepPlayerData, {
+                title: "resourcePack.editor.exportProject.initialPlaySettings.keepPlayerData",
+                tooltip: "resourcePack.editor.exportProject.initialPlaySettings.keepPlayerData.tooltip"
+            });
             const timeItems = this._getTimeItemDropdownItems();
             this._timeOfDayPropItem = generalSettingsPane.addDropdown(this._currentStartTime, {
                 title: "resourcePack.editor.exportProject.initialPlaySettings.startTime",
@@ -9437,6 +9568,7 @@ var __webpack_exports__ = {};
         TelemetrySource["Jigsaw"] = "JIGSAW";
         TelemetrySource["ChunkManagement"] = "CHUNK_MANAGEMENT";
         TelemetrySource["FloodTool"] = "FLOOD_TOOL";
+        TelemetrySource["Cinematic"] = "CINEMATIC";
     })(TelemetrySource || (TelemetrySource = {}));
     function fireTelemetryEvent(player, source, eventName, properties = {}) {
         if (SHOULD_LOG_TELEMETRY) {
@@ -10861,7 +10993,9 @@ var __webpack_exports__ = {};
     }
     async function deleteOperation(uiSession) {
         if (uiSession.extensionContext.selectionManager.volume.isEmpty) {
-            uiSession.log.warning("Selection volume is empty - nothing to clear");
+            uiSession.log.warning("resourcePack.editor.selectionTool.toast.delete.noSelection", {
+                channelMask: server_editor_namespaceObject.LogChannel.All
+            });
             return;
         }
         const selectionVolume = uiSession.extensionContext.selectionManager.volume.get();
@@ -12338,6 +12472,24 @@ var __webpack_exports__ = {};
     } ];
     const Line_PERSISTENCE_GROUP_NAME = "editor:line";
     const Line_PERSISTENCE_GROUPITEM_NAME = "line_settings";
+    class InputModifierWatcher {
+        constructor(_session, tool, _modifier) {
+            this._isDown = false;
+            const action = _session.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.StatefulAction,
+                onExecute: state => {
+                    this._isDown = state;
+                }
+            });
+            tool.registerKeyBinding(action, {
+                key: _modifier,
+                modifier: server_editor_namespaceObject.InputModifier.Any
+            });
+        }
+        get isDown() {
+            return this._isDown;
+        }
+    }
     class LineBehavior {
         constructor(uiSession) {
             this.startTransactionRequestedEventHandler = name => {
@@ -12412,6 +12564,7 @@ var __webpack_exports__ = {};
             this._loadSettings();
             this._tool = this.createTool();
             this._pane = this.createPane();
+            this._ctrlWatcher = new InputModifierWatcher(this._uiSession, this._tool, server_editor_namespaceObject.KeyboardKey.CTRL);
             this._cursorControlHolderPane = this._pane.createSubPane({
                 title: "Hidden Cursor Control Holder Pane",
                 hasExpander: false
@@ -13107,6 +13260,28 @@ var __webpack_exports__ = {};
                 uniqueId: `editor:lineToolKeyBinding:moveBack`,
                 label: `resourcePack.editor.toolRail.line.keyBinding.moveBack.title`,
                 tooltip: `resourcePack.editor.toolRail.line.keyBinding.moveBack.tooltip`
+            });
+            this._tool.registerKeyBinding(this._uiSession.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
+                onExecute: () => {
+                    if (this._tool.isActive) {
+                        const cursorRay = this._uiSession.extensionContext.cursor.getRay();
+                        const location = this._uiSession.extensionContext.cursor.getPosition();
+                        const ray = {
+                            location,
+                            direction: cursorRay.start,
+                            cursorBlockLocation: location,
+                            rayHit: cursorRay.hit
+                        };
+                        this._ctrlWatcher.isDown ? this.ctrlClick(ray) : this.click(ray);
+                    }
+                }
+            }), {
+                key: server_editor_namespaceObject.KeyboardKey.ENTER
+            }, {
+                uniqueId: `editor:lineToolKeyBinding:select`,
+                label: `resourcePack.editor.toolRail.line.keyBinding.select.title`,
+                tooltip: `resourcePack.editor.toolRail.line.keyBinding.select.tooltip`
             });
         }
         clampWeights(value, isHorizontal) {
@@ -14260,7 +14435,7 @@ var __webpack_exports__ = {};
             } else {
                 options.timeOfDay = 0;
             }
-            if (data.overrideSpawn) {
+            if (data.overrideSpawn.value) {
                 options.spawnPosition = uiSession.extensionContext.player.location;
                 options.dimensionId = uiSession.extensionContext.player.dimension.id.replace("minecraft:", "").replace("_", " ");
             }
@@ -14483,7 +14658,6 @@ var __webpack_exports__ = {};
         ThreePointSelectionState[ThreePointSelectionState["NoPoints"] = 0] = "NoPoints";
         ThreePointSelectionState[ThreePointSelectionState["FirstCorner"] = 1] = "FirstCorner";
         ThreePointSelectionState[ThreePointSelectionState["BottomFace"] = 2] = "BottomFace";
-        ThreePointSelectionState[ThreePointSelectionState["Finished"] = 3] = "Finished";
     })(ThreePointSelectionState || (ThreePointSelectionState = {}));
     class MarqueeSelectionVolume {
         get parent() {
@@ -14802,6 +14976,13 @@ var __webpack_exports__ = {};
             this._resizeShrink = false;
             this._tickHandle = undefined;
             this._shiftTickHandle = undefined;
+            this._cursorFaceDirectionAxisLock = {
+                x: 1,
+                y: 0,
+                z: 1
+            };
+            this._override3PointSelectMousePreview = false;
+            this._currCursorBlockLocation = lib.VECTOR3_ZERO;
             this._parentPane = _parentPane;
             this._parent = _parent;
             this._modePane = this._parentPane.createSubPane({
@@ -14918,7 +15099,7 @@ var __webpack_exports__ = {};
             }
             this._tickHandle = server_namespaceObject.system.runInterval((() => {
                 this._onTick();
-            }), server_namespaceObject.TicksPerSecond / 3);
+            }), 1);
             this._showVolumes();
         }
         deactivate(_toolActive, _switchingModes) {
@@ -14956,7 +15137,25 @@ var __webpack_exports__ = {};
                 z: 1
             };
         }
-        applyImmediateSelection() {}
+        applyImmediateSelection(state) {
+            const cursorRay = this.session.extensionContext.cursor.getRay();
+            const location = this.session.extensionContext.cursor.getPosition();
+            const ray = {
+                location,
+                direction: cursorRay.start,
+                cursorBlockLocation: location,
+                rayHit: cursorRay.hit
+            };
+            const shiftDown = this._parent.isModifierDown(server_editor_bindings_namespaceObject.InputModifier.Shift);
+            const ctrlDown = this._parent.isModifierDown(server_editor_bindings_namespaceObject.InputModifier.Control);
+            if (ray.rayHit) {
+                if (state) {
+                    this._onLeftMousePressed(ctrlDown, shiftDown, ray);
+                } else {
+                    this._onLeftMouseReleased(shiftDown, ray);
+                }
+            }
+        }
         onMouseClickAndDrag(_mouseRay, _mouseProps, _oneShot = false) {
             if (_mouseProps.mouseAction === server_editor_namespaceObject.MouseActionType.LeftButton) {
                 switch (_mouseProps.inputType) {
@@ -15001,7 +15200,10 @@ var __webpack_exports__ = {};
             if (!volume) {
                 return;
             }
-            if (volume.isShiftDown) {
+            if (volume.isShiftDown && this._override3PointSelectMousePreview) {
+                this._override3PointSelectMousePreview = false;
+            }
+            if (volume.isShiftDown || this._override3PointSelectMousePreview) {
                 if (!this._shiftTickHandle) {
                     this._shiftTickHandle = server_namespaceObject.system.runInterval((() => {
                         this._onShiftTick();
@@ -15025,11 +15227,8 @@ var __webpack_exports__ = {};
                 return;
             }
             const mouseHit = this.session.extensionContext.cursor.getRay();
-            if (!mouseHit.hit) {
-                return;
-            }
-            volume.toggleCornerGizmos(!volume.isShiftDown || volume.threePointSelectionState === ThreePointSelectionState.Finished || volume.threePointSelectionState === ThreePointSelectionState.NoPoints);
-            if (!volume.isShiftDown) {
+            volume.toggleCornerGizmos((!volume.isShiftDown || volume.threePointSelectionState === ThreePointSelectionState.NoPoints) && !this._override3PointSelectMousePreview);
+            if (!volume.isShiftDown && !this._override3PointSelectMousePreview) {
                 if (this._shiftTickHandle) {
                     server_namespaceObject.system.clearRun(this._shiftTickHandle);
                     this._shiftTickHandle = undefined;
@@ -15037,75 +15236,101 @@ var __webpack_exports__ = {};
                 return;
             }
             const mouseRay = lib.Vector3Utils.normalize(lib.Vector3Utils.subtract(mouseHit.end, mouseHit.start));
+            const playerCameraPosition = lib.Vector3Utils.add(this.session.extensionContext.player.getHeadLocation(), {
+                x: 0,
+                y: .1,
+                z: 0
+            });
             if (volume.threePointSelectionState === ThreePointSelectionState.FirstCorner) {
-                const secondPointCandidate = calculateYPlaneIntersection(volume.firstCorner ?? volume.from, mouseHit.start, mouseRay);
+                const secondPointCandidate = calculatePlaneIntersection(volume.firstCorner ?? volume.from, playerCameraPosition, mouseRay, this._cursorFaceDirectionAxisLock);
                 if (secondPointCandidate) {
-                    if (!lib.Vector3Utils.equals(secondPointCandidate, volume.to) && this._isValidCornerPoint(secondPointCandidate, volume.from)) {
+                    if (!lib.Vector3Utils.equals(secondPointCandidate, volume.to) && this._isValidCornerPoint(volume.from, secondPointCandidate)) {
                         this._tryAssignVolumeTo(volume, secondPointCandidate);
+                        volume.secondCorner = volume.to;
                     }
                 }
             } else if (volume.threePointSelectionState === ThreePointSelectionState.BottomFace) {
-                const thirdPointCandidate = calculateClosestPointOnSecondLine(mouseHit.start, mouseRay, volume.secondCorner ?? volume.to, lib.VECTOR3_UP);
+                const thirdPointCandidate = calculateClosestPointOnSecondLine(playerCameraPosition, mouseRay, volume.secondCorner ?? volume.to, this._determineDirectionFromAxisLock(this._cursorFaceDirectionAxisLock));
                 if (thirdPointCandidate) {
-                    if (!lib.Vector3Utils.equals(thirdPointCandidate, volume.to) && this._isValidCornerPoint(thirdPointCandidate, volume.from)) {
+                    if (!lib.Vector3Utils.equals(thirdPointCandidate, volume.to) && this._isValidCornerPoint(volume.from, thirdPointCandidate)) {
                         this._tryAssignVolumeTo(volume, thirdPointCandidate);
+                        volume.secondCorner = volume.to;
                     }
                 }
             }
         }
         _onLeftMousePressed(isCtrlDown, isShiftDown, mouseRay) {
+            this._currCursorBlockLocation = mouseRay.cursorBlockLocation;
+            const threePointSelectionEnabled = !this._parent.isSimpleSelectEnabled();
+            let currVolume = this._currentVolume();
             if (!this.parent.isTransactionOperationActive()) {
                 this.parent.beginTransactionableOperation("Marquee Selection Operation");
             }
-            let currVolume = this._currentVolume();
+            if (!isCtrlDown && currVolume) {
+                const shouldClear = !threePointSelectionEnabled ? !isShiftDown : !this._override3PointSelectMousePreview && (!isShiftDown || currVolume.threePointSelectionState === ThreePointSelectionState.NoPoints);
+                if (shouldClear) {
+                    this._clearVolumeStack();
+                }
+            }
+            currVolume = this._currentVolume();
+            const shouldCreateNewVolume = !currVolume || isCtrlDown && this._shouldCreateNewVolumeOnCtrl(threePointSelectionEnabled, isShiftDown, currVolume);
+            if (shouldCreateNewVolume) {
+                currVolume = this._createVolume(new server_namespaceObject.BlockVolume(this._currCursorBlockLocation, this._currCursorBlockLocation), true);
+                currVolume.firstCorner = this._currCursorBlockLocation;
+                currVolume.secondCorner = this._currCursorBlockLocation;
+                currVolume.threePointSelectionState = threePointSelectionEnabled ? ThreePointSelectionState.FirstCorner : ThreePointSelectionState.NoPoints;
+                currVolume.state = MarqueeSelectionVolumeState.Idle;
+                this._determineCursorFaceDirectionAxisLock();
+                this.applyVolumeStackToSelectionManager();
+                return;
+            }
             if (!currVolume) {
-                currVolume = this._createVolume(new server_namespaceObject.BlockVolume(mouseRay.cursorBlockLocation, mouseRay.cursorBlockLocation), true);
-                currVolume.firstCorner = mouseRay.cursorBlockLocation;
-                currVolume.secondCorner = undefined;
-                currVolume.threePointSelectionState = ThreePointSelectionState.NoPoints;
+                return;
             }
             currVolume.state = MarqueeSelectionVolumeState.Idle;
-            const threePointSelectionEnabled = !this._parent.isSimpleSelectEnabled();
-            if (threePointSelectionEnabled && isShiftDown) {
+            const playerCameraPosition = lib.Vector3Utils.add(this.session.extensionContext.player.getHeadLocation(), {
+                x: 0,
+                y: .1,
+                z: 0
+            });
+            if (threePointSelectionEnabled) {
                 switch (currVolume.threePointSelectionState) {
+                  case ThreePointSelectionState.NoPoints:
+                    {
+                        if (isShiftDown) {
+                            this._determineCursorFaceDirectionAxisLock();
+                            if (this._tryAssignVolumeFrom(currVolume, this._currCursorBlockLocation) && this._tryAssignVolumeTo(currVolume, this._currCursorBlockLocation)) {
+                                currVolume.firstCorner = this._currCursorBlockLocation;
+                                currVolume.secondCorner = this._currCursorBlockLocation;
+                                currVolume.threePointSelectionState = ThreePointSelectionState.FirstCorner;
+                            }
+                        }
+                        break;
+                    }
+
                   case ThreePointSelectionState.FirstCorner:
                     {
-                        const newSecondCorner = calculateYPlaneIntersection(currVolume.from, mouseRay.location, mouseRay.direction);
-                        if (newSecondCorner) {
-                            if (this._isValidCornerPoint(newSecondCorner, currVolume.from)) {
-                                this._tryAssignVolumeTo(currVolume, newSecondCorner);
-                                currVolume.secondCorner = currVolume.to;
-                                currVolume.threePointSelectionState = ThreePointSelectionState.BottomFace;
-                            }
+                        if (!isShiftDown) break;
+                        const newSecondCorner = calculatePlaneIntersection(currVolume.from, playerCameraPosition, mouseRay.direction, this._cursorFaceDirectionAxisLock);
+                        if (newSecondCorner && this._isValidCornerPoint(currVolume.from, newSecondCorner)) {
+                            this._tryAssignVolumeTo(currVolume, newSecondCorner);
+                            currVolume.secondCorner = currVolume.to;
+                            currVolume.threePointSelectionState = ThreePointSelectionState.BottomFace;
                         }
                         break;
                     }
 
                   case ThreePointSelectionState.BottomFace:
                     {
-                        const topOrBottomCorner = calculateClosestPointOnSecondLine(mouseRay.location, mouseRay.direction, currVolume.secondCorner ?? currVolume.to, lib.VECTOR3_UP);
-                        if (topOrBottomCorner) {
-                            const newSecondCorner = {
-                                x: currVolume?.secondCorner?.x ?? currVolume.to.x,
-                                y: topOrBottomCorner.y,
-                                z: currVolume?.secondCorner?.z ?? currVolume.to.z
-                            };
-                            if (this._isValidCornerPoint(newSecondCorner, currVolume.from)) {
-                                this._tryAssignVolumeTo(currVolume, newSecondCorner);
-                                currVolume.secondCorner = currVolume.to;
-                                currVolume.threePointSelectionState = ThreePointSelectionState.Finished;
-                            }
+                        if (!isShiftDown && !this._override3PointSelectMousePreview) break;
+                        const topOrBottomCorner = calculateClosestPointOnSecondLine(playerCameraPosition, mouseRay.direction, currVolume.secondCorner ?? currVolume.to, this._determineDirectionFromAxisLock(this._cursorFaceDirectionAxisLock));
+                        if (topOrBottomCorner && this._isValidCornerPoint(currVolume.from, topOrBottomCorner)) {
+                            this._tryAssignVolumeTo(currVolume, topOrBottomCorner);
+                            currVolume.secondCorner = currVolume.to;
+                            currVolume.threePointSelectionState = ThreePointSelectionState.NoPoints;
                         }
-                        break;
-                    }
-
-                  case ThreePointSelectionState.NoPoints:
-                  case ThreePointSelectionState.Finished:
-                    {
-                        if (this._tryAssignVolumeFrom(currVolume, mouseRay.cursorBlockLocation) && this._tryAssignVolumeTo(currVolume, mouseRay.cursorBlockLocation)) {
-                            currVolume.firstCorner = mouseRay.cursorBlockLocation;
-                            currVolume.secondCorner = undefined;
-                            currVolume.threePointSelectionState = ThreePointSelectionState.FirstCorner;
+                        if (this._override3PointSelectMousePreview) {
+                            this._override3PointSelectMousePreview = false;
                         }
                         break;
                     }
@@ -15115,26 +15340,28 @@ var __webpack_exports__ = {};
                         break;
                     }
                 }
-            } else {
-                if (isShiftDown) {
-                    const targetLocation = mouseRay.cursorBlockLocation;
-                    if (!lib.Vector3Utils.equals(targetLocation, currVolume.to) && this._isValidCornerPoint(targetLocation, currVolume.from)) {
-                        this._tryAssignVolumeTo(currVolume, targetLocation);
-                    }
-                } else {
-                    if (!isCtrlDown) {
-                        this._clearVolumeStack();
-                    }
-                    const newVolume = this._createVolume(new server_namespaceObject.BlockVolume(mouseRay.cursorBlockLocation, mouseRay.cursorBlockLocation), true);
-                    newVolume.firstCorner = mouseRay.cursorBlockLocation;
-                    newVolume.secondCorner = undefined;
-                    newVolume.state = MarqueeSelectionVolumeState.Idle;
-                    newVolume.threePointSelectionState = ThreePointSelectionState.FirstCorner;
-                }
+            } else if (isShiftDown && !lib.Vector3Utils.equals(currVolume.from, this._currCursorBlockLocation) && this._isValidCornerPoint(currVolume.from, this._currCursorBlockLocation) && this._tryAssignVolumeTo(currVolume, this._currCursorBlockLocation)) {
+                currVolume.firstCorner = currVolume.from;
+                currVolume.secondCorner = currVolume.to;
+                currVolume.threePointSelectionState = ThreePointSelectionState.FirstCorner;
             }
             this.applyVolumeStackToSelectionManager();
         }
+        _shouldCreateNewVolumeOnCtrl(threePointSelectionEnabled, isShiftDown, currVolume) {
+            if (!threePointSelectionEnabled) {
+                return !isShiftDown;
+            }
+            if (!currVolume) {
+                return false;
+            }
+            return currVolume.threePointSelectionState === ThreePointSelectionState.NoPoints || !isShiftDown && currVolume.threePointSelectionState !== ThreePointSelectionState.BottomFace && currVolume.state !== MarqueeSelectionVolumeState.Dragging;
+        }
         _onLeftMouseDrag(isCtrlDown, isShiftDown, mouseRay) {
+            if (!lib.Vector3Utils.equals(this._currCursorBlockLocation, mouseRay.cursorBlockLocation)) {
+                this._currCursorBlockLocation = mouseRay.cursorBlockLocation;
+            } else {
+                return;
+            }
             if (!this.parent.isTransactionOperationActive()) {
                 return;
             }
@@ -15143,12 +15370,18 @@ var __webpack_exports__ = {};
                 return;
             }
             currVolume.state = MarqueeSelectionVolumeState.Dragging;
+            const playerCameraPosition = lib.Vector3Utils.add(this.session.extensionContext.player.getHeadLocation(), {
+                x: 0,
+                y: .1,
+                z: 0
+            });
             const threePointSelectionEnabled = !this._parent.isSimpleSelectEnabled();
-            if (threePointSelectionEnabled && isShiftDown) {
+            if (threePointSelectionEnabled && !lib.Vector3Utils.equals(mouseRay.cursorBlockLocation, currVolume.from)) {
                 switch (currVolume.threePointSelectionState) {
                   case ThreePointSelectionState.FirstCorner:
                     {
-                        const newSecondCorner = calculateYPlaneIntersection(currVolume.firstCorner ?? currVolume.from, mouseRay.location, mouseRay.direction);
+                        currVolume.toggleCornerGizmos(false);
+                        const newSecondCorner = calculatePlaneIntersection(currVolume.firstCorner ?? currVolume.from, playerCameraPosition, mouseRay.direction, this._cursorFaceDirectionAxisLock);
                         if (newSecondCorner) {
                             if (!lib.Vector3Utils.equals(newSecondCorner, currVolume.to) && this._isValidCornerPoint(currVolume.from, newSecondCorner)) {
                                 this._tryAssignVolumeTo(currVolume, newSecondCorner);
@@ -15160,7 +15393,6 @@ var __webpack_exports__ = {};
 
                   case ThreePointSelectionState.NoPoints:
                   case ThreePointSelectionState.BottomFace:
-                  case ThreePointSelectionState.Finished:
                   default:
                     {
                         break;
@@ -15170,6 +15402,7 @@ var __webpack_exports__ = {};
                 const targetLocation = mouseRay.cursorBlockLocation;
                 if (!lib.Vector3Utils.equals(targetLocation, currVolume.to) && this._isValidCornerPoint(currVolume.from, targetLocation)) {
                     this._tryAssignVolumeTo(currVolume, targetLocation);
+                    currVolume.secondCorner = currVolume.to;
                 }
             }
         }
@@ -15183,29 +15416,60 @@ var __webpack_exports__ = {};
             }
             if (currVolume.state === MarqueeSelectionVolumeState.Dragging) {
                 const threePointSelectionEnabled = !this._parent.isSimpleSelectEnabled();
-                if (threePointSelectionEnabled && isShiftDown) {
-                    if (currVolume.threePointSelectionState === ThreePointSelectionState.FirstCorner) {
-                        const newSecondCorner = calculateYPlaneIntersection(currVolume.firstCorner ?? currVolume.from, mouseRay.location, mouseRay.direction);
-                        if (newSecondCorner) {
-                            if (!lib.Vector3Utils.equals(newSecondCorner, currVolume.to) && this._isValidCornerPoint(newSecondCorner, currVolume.from)) {
-                                this._tryAssignVolumeTo(currVolume, newSecondCorner);
-                                currVolume.secondCorner = currVolume.to;
-                                currVolume.threePointSelectionState = ThreePointSelectionState.BottomFace;
+                const playerCameraPosition = lib.Vector3Utils.add(this.session.extensionContext.player.getHeadLocation(), {
+                    x: 0,
+                    y: .1,
+                    z: 0
+                });
+                if (threePointSelectionEnabled) {
+                    switch (currVolume.threePointSelectionState) {
+                      case ThreePointSelectionState.FirstCorner:
+                        {
+                            const newSecondCorner = calculatePlaneIntersection(currVolume.firstCorner ?? currVolume.from, playerCameraPosition, mouseRay.direction, this._cursorFaceDirectionAxisLock);
+                            if (newSecondCorner) {
+                                if (this._isValidCornerPoint(currVolume.from, newSecondCorner)) {
+                                    this._tryAssignVolumeTo(currVolume, newSecondCorner);
+                                    currVolume.secondCorner = currVolume.to;
+                                    currVolume.threePointSelectionState = ThreePointSelectionState.BottomFace;
+                                }
                             }
+                            if (!isShiftDown) {
+                                this._override3PointSelectMousePreview = true;
+                            }
+                            break;
+                        }
+
+                      case ThreePointSelectionState.NoPoints:
+                        {
+                            if (this.parent.isTransactionOperationActive()) {
+                                this.parent.endTransactionableOperation();
+                            }
+                            break;
+                        }
+
+                      case ThreePointSelectionState.BottomFace:
+                      default:
+                        {
+                            break;
                         }
                     }
                 } else {
                     const targetLocation = mouseRay.cursorBlockLocation;
-                    if (!lib.Vector3Utils.equals(targetLocation, currVolume.to) && this._isValidCornerPoint(targetLocation, currVolume.from)) {
+                    if (this._isValidCornerPoint(currVolume.from, targetLocation)) {
                         this._tryAssignVolumeTo(currVolume, targetLocation);
+                        currVolume.secondCorner = currVolume.to;
                     }
+                    if (this.parent.isTransactionOperationActive()) {
+                        this.parent.endTransactionableOperation();
+                    }
+                }
+            } else {
+                if (this.parent.isTransactionOperationActive()) {
+                    this.parent.endTransactionableOperation();
                 }
             }
             currVolume.state = MarqueeSelectionVolumeState.Done;
             this.applyVolumeStackToSelectionManager();
-            if (this.parent.isTransactionOperationActive()) {
-                this.parent.endTransactionableOperation();
-            }
         }
         _isValidCornerPoint(firstCorner, secondCornerCandidate) {
             const difference = lib.Vector3Utils.subtract(secondCornerCandidate, firstCorner);
@@ -15246,6 +15510,52 @@ var __webpack_exports__ = {};
                 this.parent.cancelTransactionableOperation();
                 return false;
             }
+        }
+        _determineCursorFaceDirectionAxisLock() {
+            const cursorDirection = this.session.extensionContext.cursor.faceDirection;
+            switch (cursorDirection) {
+              case 1:
+              case 0:
+                this._cursorFaceDirectionAxisLock = {
+                    x: 1,
+                    y: 0,
+                    z: 1
+                };
+                break;
+
+              case 2:
+              case 3:
+                this._cursorFaceDirectionAxisLock = {
+                    x: 1,
+                    y: 1,
+                    z: 0
+                };
+                break;
+
+              case 4:
+              case 5:
+                this._cursorFaceDirectionAxisLock = {
+                    x: 0,
+                    y: 1,
+                    z: 1
+                };
+                break;
+
+              default:
+                this._cursorFaceDirectionAxisLock = {
+                    x: 1,
+                    y: 0,
+                    z: 1
+                };
+                break;
+            }
+        }
+        _determineDirectionFromAxisLock(axisLock) {
+            return {
+                x: 1 - axisLock.x,
+                y: 1 - axisLock.y,
+                z: 1 - axisLock.z
+            };
         }
         _showVolumes() {
             this._volumeStack.forEach((volume => {
@@ -15693,13 +16003,15 @@ var __webpack_exports__ = {};
             this._popVolume();
             this._clearSelectionManager();
         }
-        applyImmediateSelection() {
-            if (this.parent.isTransactionOperationActive()) {
-                this.session.log.warning(`Freehand selection already active`);
-                return;
+        applyImmediateSelection(_state) {
+            if (_state) {
+                if (this.parent.isTransactionOperationActive()) {
+                    this.session.log.warning(`Freehand selection already active`);
+                    return;
+                }
+                this.parent.beginTransactionableOperation("Freehand Volume Creation");
+                this._beginFreehandSelection(true);
             }
-            this.parent.beginTransactionableOperation("Freehand Volume Creation");
-            this._beginFreehandSelection(true);
         }
         onMouseClickAndDrag(_mouseRay, _mouseProps, _oneShot = false) {
             if (_mouseProps.mouseAction === server_editor_namespaceObject.MouseActionType.LeftButton) {
@@ -15738,6 +16050,7 @@ var __webpack_exports__ = {};
                         this._createVolume();
                         this.parent.endTransactionableOperation();
                     } else {
+                        this._freehandSelectionActive = false;
                         this._popVolume();
                         this.parent.cancelTransactionableOperation();
                     }
@@ -15749,6 +16062,7 @@ var __webpack_exports__ = {};
                         this._createVolume();
                         this.parent.endTransactionableOperation();
                     } else {
+                        this._freehandSelectionActive = false;
                         this._popVolume();
                         this.parent.cancelTransactionableOperation();
                     }
@@ -16239,7 +16553,7 @@ var __webpack_exports__ = {};
             this._popVolume();
             this._clearSelectionManager();
         }
-        applyImmediateSelection() {}
+        applyImmediateSelection(_state) {}
         onMouseClickAndDrag(_mouseRay, _mouseProps, _oneShot = false) {
             if (_mouseProps.mouseAction === server_editor_namespaceObject.MouseActionType.LeftButton) {
                 if (_mouseProps.inputType === server_editor_namespaceObject.MouseInputType.ButtonDown) {
@@ -16937,7 +17251,7 @@ var __webpack_exports__ = {};
             return server_namespaceObject.BlockBoundingBoxUtils.isInside(currentBounds, newPosition) && server_namespaceObject.BlockBoundingBoxUtils.isInside(currentBounds, newMax);
         }
     }
-    class InputModifierWatcher {
+    class SelectionBehavior_InputModifierWatcher {
         constructor(_session, tool, _modifier) {
             this._isDown = false;
             const action = _session.actionManager.createAction({
@@ -16993,7 +17307,7 @@ var __webpack_exports__ = {};
         }
         constructor(uiSession) {
             this.uiSession = uiSession;
-            this._useSimpleSelectionMode = (0, server_editor_namespaceObject.makeObservable)(true);
+            this._useSimpleSelectionMode = (0, server_editor_namespaceObject.makeObservable)(false);
             this._quickActionMode = (0, server_editor_namespaceObject.makeObservable)(SelectionCommonTypes_QuickActionMode.Invalid);
             this._volumeTrimActionMode = (0, server_editor_namespaceObject.makeObservable)(TrimActionMode.Invalid);
             this._volumeTrimIgnoreLiquid = (0, server_editor_namespaceObject.makeObservable)(true);
@@ -17181,12 +17495,14 @@ var __webpack_exports__ = {};
                 this._nudgeMoveControls = this._nudgeMode.buildNudgeHandler(NudgeOperation.Move, server_editor_namespaceObject.InputModifier.Alt | server_editor_namespaceObject.InputModifier.Shift);
                 this._nudgeCopyControls = this._nudgeMode.buildNudgeHandler(NudgeOperation.Copy, server_editor_namespaceObject.InputModifier.Alt | server_editor_namespaceObject.InputModifier.Control);
                 const keySelectAction = uiSession.actionManager.createAction({
-                    actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
-                    onExecute: () => {
+                    actionType: server_editor_namespaceObject.ActionTypes.StatefulAction,
+                    onExecute: state => {
                         const selectionCreationMode = this.selectionCreationMode;
                         if (selectionCreationMode !== undefined) {
-                            this.uiSession.extensionContext.selectionManager.volume.clear();
-                            selectionCreationMode.applyImmediateSelection();
+                            if (state) {
+                                this.uiSession.extensionContext.selectionManager.volume.clear();
+                            }
+                            selectionCreationMode.applyImmediateSelection(state);
                         }
                     }
                 });
@@ -17194,9 +17510,9 @@ var __webpack_exports__ = {};
                     key: Controls.Select
                 }, "select");
                 const keySelectMultipleAction = uiSession.actionManager.createAction({
-                    actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
-                    onExecute: () => {
-                        this.selectionCreationMode?.applyImmediateSelection();
+                    actionType: server_editor_namespaceObject.ActionTypes.StatefulAction,
+                    onExecute: state => {
+                        this.selectionCreationMode?.applyImmediateSelection(state);
                     }
                 });
                 this._registerToolKeyBinding(keySelectMultipleAction, {
@@ -17517,7 +17833,7 @@ var __webpack_exports__ = {};
                 this._nudgeMode.updateNudgeEnabled();
                 this._quickActionsDivider = _parentPane.addDivider();
                 this._simpleSelectionCheckBox = _parentPane.addBool(this._useSimpleSelectionMode, {
-                    visible: false,
+                    visible: this._selectionMode?.value === SelectionToolMode.Marquee,
                     title: "resourcePack.editor.selectionTool.modeSelection.useSimpleSelection.title",
                     tooltip: "resourcePack.editor.selectionTool.modeSelection.useSimpleSelection.tooltip",
                     onChange: () => {
@@ -17599,7 +17915,9 @@ var __webpack_exports__ = {};
                     actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                     onExecute: () => {
                         if (this.session.extensionContext.selectionManager.volume.isEmpty) {
-                            this.session.log.warning("No selection available to trim");
+                            this.session.log.warning("resourcePack.editor.selectionTool.toast.trimSelection.noSelection", {
+                                channelMask: server_editor_namespaceObject.LogChannel.All
+                            });
                             return;
                         }
                         this._telemetryManager.fireTelemetryEvent(SelectionTelemetry.QuickAction, {
@@ -17614,7 +17932,9 @@ var __webpack_exports__ = {};
                     actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                     onExecute: () => {
                         if (this.session.extensionContext.selectionManager.volume.isEmpty) {
-                            this.session.log.warning("No selection available to remove air");
+                            this.session.log.warning("resourcePack.editor.selectionTool.toast.removeAir.noSelection", {
+                                channelMask: server_editor_namespaceObject.LogChannel.All
+                            });
                             return;
                         }
                         this._telemetryManager.fireTelemetryEvent(SelectionTelemetry.QuickAction, {
@@ -17629,7 +17949,9 @@ var __webpack_exports__ = {};
                     actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                     onExecute: () => {
                         if (this.session.extensionContext.selectionManager.volume.isEmpty) {
-                            this.session.log.warning("No selection available to hollow");
+                            this.session.log.warning("resourcePack.editor.selectionTool.toast.hollow.noSelection", {
+                                channelMask: server_editor_namespaceObject.LogChannel.All
+                            });
                             return;
                         }
                         this._telemetryManager.fireTelemetryEvent(SelectionTelemetry.QuickAction, {
@@ -17831,7 +18153,9 @@ var __webpack_exports__ = {};
             };
             this._performFillOperation = async (session, context) => {
                 if (context.selectionManager.volume.isEmpty) {
-                    session.log.warning("No selection available to fill");
+                    session.log.warning("resourcePack.editor.selectionTool.toast.fill.noSelection", {
+                        channelMask: server_editor_namespaceObject.LogChannel.All
+                    });
                     return;
                 }
                 const onError = e => {
@@ -17958,7 +18282,11 @@ var __webpack_exports__ = {};
                     this.session.log.info(`Removed ${blocksRemoved} block${blocksRemoved !== 1 ? "s" : ""} of type ${blockId}`, {
                         channelMask: server_editor_namespaceObject.LogChannel.Toast
                     });
+                    const selectionModeAtStart = this._selectionMode.value;
                     await this._startManifestGeneration();
+                    if (selectionModeAtStart === SelectionToolMode.Marquee) {
+                        this._internalChangeVolumeContentsNotification();
+                    }
                 } catch (err) {
                     this.session.log.error(`Deselect operation failed: ${err.message}`, {
                         channelMask: server_editor_namespaceObject.LogChannel.All
@@ -18211,9 +18539,9 @@ var __webpack_exports__ = {};
                     this._magicModeImplementation.onDimensionChange();
                 }
             }));
-            this._altWatcher = new InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.ALT);
-            this._shiftWatcher = new InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.SHIFT);
-            this._ctrlWatcher = new InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.CTRL);
+            this._altWatcher = new SelectionBehavior_InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.ALT);
+            this._shiftWatcher = new SelectionBehavior_InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.SHIFT);
+            this._ctrlWatcher = new SelectionBehavior_InputModifierWatcher(this.session, this.tool, server_editor_namespaceObject.KeyboardKey.CTRL);
         }
         get selectionCreationMode() {
             return this._activeModeImplementation?.isSelectionCreationMode() ? this._activeModeImplementation : undefined;
@@ -18440,7 +18768,7 @@ var __webpack_exports__ = {};
               default:
                 throw new Error("Unknown selection mode requested");
             }
-            this._simpleSelectionCheckBox.visible = false;
+            this._simpleSelectionCheckBox.visible = _newMode === SelectionToolMode.Marquee;
             this._selectionMode.set(this._activeModeImplementation?.modeType);
         }
         _registerToolKeyBinding(action, binding, tag) {
@@ -18475,7 +18803,9 @@ var __webpack_exports__ = {};
         }
         async _performTrimOperation(session, context) {
             if (context.selectionManager.volume.isEmpty) {
-                session.log.warning("No selection available to trim");
+                session.log.warning("resourcePack.editor.selectionTool.toast.trimSelection.noSelection", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
                 return;
             }
             const onError = e => {
@@ -18500,9 +18830,20 @@ var __webpack_exports__ = {};
                     const blockMask = this._blockMaskSharedControl?.getBlockMask();
                     const newVolume = this.session.extensionContext.blockUtilities.trimVolumeToFitContents(volume, retainMarqueeAfterTrimming, ignoreLiquid, ignoreNoCollision, blockMask);
                     if (newVolume.isEmpty) {
+                        session.log.warning("resourcePack.editor.selectionTool.toast.trimSelection.noBlocksRemaining", {
+                            channelMask: server_editor_namespaceObject.LogChannel.All
+                        });
                         context.selectionManager.volume.clear();
                     } else {
-                        context.selectionManager.volume.set(newVolume);
+                        const originalCapacity = volume.getCapacity();
+                        const newCapacity = newVolume.getCapacity();
+                        if (originalCapacity === newCapacity) {
+                            session.log.warning("resourcePack.editor.selectionTool.toast.trimSelection.noChanges", {
+                                channelMask: server_editor_namespaceObject.LogChannel.All
+                            });
+                        } else {
+                            context.selectionManager.volume.set(newVolume);
+                        }
                     }
                     return true;
                 }), "Trim Volume");
@@ -18511,7 +18852,9 @@ var __webpack_exports__ = {};
         }
         async _performRemoveAirOperation(session, context) {
             if (context.selectionManager.volume.isEmpty) {
-                session.log.warning("No selection available to remove air");
+                session.log.warning("resourcePack.editor.selectionTool.toast.removeAir.noSelection", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
                 return;
             }
             const onError = e => {
@@ -18536,9 +18879,20 @@ var __webpack_exports__ = {};
                     const blockMask = this._blockMaskSharedControl?.getBlockMask();
                     const newVolume = this.session.extensionContext.blockUtilities.trimVolumeToFitContents(volume, retainMarqueeAfterTrimming, ignoreLiquid, ignoreNoCollision, blockMask);
                     if (newVolume.isEmpty) {
+                        session.log.warning("resourcePack.editor.selectionTool.toast.removeAir.noBlocksRemaining", {
+                            channelMask: server_editor_namespaceObject.LogChannel.All
+                        });
                         context.selectionManager.volume.clear();
                     } else {
-                        context.selectionManager.volume.set(newVolume);
+                        const originalCapacity = volume.getCapacity();
+                        const newCapacity = newVolume.getCapacity();
+                        if (originalCapacity === newCapacity) {
+                            session.log.warning("resourcePack.editor.selectionTool.toast.removeAir.noChanges", {
+                                channelMask: server_editor_namespaceObject.LogChannel.All
+                            });
+                        } else {
+                            context.selectionManager.volume.set(newVolume);
+                        }
                     }
                     return true;
                 }), "Remove Air");
@@ -18547,7 +18901,9 @@ var __webpack_exports__ = {};
         }
         async _performHollowOperation(session, context) {
             if (context.selectionManager.volume.isEmpty) {
-                session.log.warning("No selection available to hollow");
+                session.log.warning("resourcePack.editor.selectionTool.toast.hollow.noSelection", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
                 return;
             }
             const onError = e => {
@@ -18568,7 +18924,9 @@ var __webpack_exports__ = {};
                 this.performSingleTransactionableOperation((() => {
                     const newVolume = this.session.extensionContext.blockUtilities.findObscuredBlocksWithinVolume(volume);
                     if (newVolume.isEmpty) {
-                        this.session.log.info("Current Volume could not be hollowed out");
+                        session.log.warning("resourcePack.editor.selectionTool.toast.hollow.noChanges", {
+                            channelMask: server_editor_namespaceObject.LogChannel.All
+                        });
                     } else {
                         context.selectionManager.volume.set(newVolume);
                     }
@@ -19372,6 +19730,7 @@ var __webpack_exports__ = {};
             this.updateSelectionPreview();
         }
         handleBeginSummonMode(mouseRay) {
+            const HALF_BLOCK_WIDTH = .5;
             const spawnLoc = {
                 ...mouseRay.cursorBlockLocation
             };
@@ -19380,9 +19739,9 @@ var __webpack_exports__ = {};
             spawnLoc.x = Math.round(spawnLoc.x / gridAlignment.x) * gridAlignment.x;
             spawnLoc.y = Math.round(spawnLoc.y / gridAlignment.y) * gridAlignment.y;
             spawnLoc.z = Math.round(spawnLoc.z / gridAlignment.z) * gridAlignment.z;
-            spawnLoc.x += offset.x;
+            spawnLoc.x += offset.x + HALF_BLOCK_WIDTH;
             spawnLoc.y += offset.y;
-            spawnLoc.z += offset.z;
+            spawnLoc.z += offset.z + HALF_BLOCK_WIDTH;
             const player = this._session.extensionContext.player;
             const dimension = player.dimension;
             try {
@@ -19811,6 +20170,11 @@ var __webpack_exports__ = {};
         "minecraft:nether": 1,
         "minecraft:the_end": 2
     };
+    var StoredLocationActionType;
+    (function(StoredLocationActionType) {
+        StoredLocationActionType["Check"] = "check";
+        StoredLocationActionType["Delete"] = "delete";
+    })(StoredLocationActionType || (StoredLocationActionType = {}));
     var NavigationTelemetry;
     (function(NavigationTelemetry) {
         NavigationTelemetry["ShowMapToggle"] = "ShowMapToggle";
@@ -19831,8 +20195,8 @@ var __webpack_exports__ = {};
             this.mapPayload = (0, server_editor_namespaceObject.makeObservable)("");
             this.previousDirectionPlayerIsFacing = Navigation_Direction.North;
             this.mapSizeSelection = (0, server_editor_namespaceObject.makeObservable)(MapSize.Small);
+            this.visibleLocationPaneSlots = undefined;
             this.selectedLocationIndex = 0;
-            this.quickActionMode = (0, server_editor_namespaceObject.makeObservable)(0);
             this.lastUpdateTimestamp = 0;
             this.previousPlayerIds = new Set;
             this.initializedMinimapCache = false;
@@ -19923,7 +20287,8 @@ var __webpack_exports__ = {};
                         link: "https://aka.ms/BedrockEditorNavigationPanel",
                         text: "resourcePack.editor.help.learnMore"
                     } ]
-                }
+                },
+                icon: "pack://textures/editor/Pin_24.png"
             });
             this.parentPane.onPropertyPaneVisibilityUpdated.subscribe((data => {
                 if (!this.initializedMinimapCache && data.isVisible) {
@@ -19954,7 +20319,8 @@ var __webpack_exports__ = {};
             }
             const minimapPane = this.parentPane.createSubPane({
                 title: "resourcePack.editor.goToMark.pane.mapPane.heading",
-                collapsed: false
+                collapsed: false,
+                icon: "pack://textures/editor/World.png"
             });
             const currentLocation = lib.Vector3Utils.floor(this.uiSession.extensionContext.player.location);
             const playerLocation = (0, server_editor_namespaceObject.makeObservable)(currentLocation);
@@ -20145,7 +20511,8 @@ var __webpack_exports__ = {};
             }
             const usersPane = this.parentPane.createSubPane({
                 title: "resourcePack.editor.goToMark.pane.usersPane.heading",
-                collapsed: true
+                collapsed: true,
+                icon: "pack://textures/editor/Players.png"
             });
             const players = server_namespaceObject.world.getAllPlayers();
             if (!this.playerColors) {
@@ -20161,23 +20528,29 @@ var __webpack_exports__ = {};
             this.usersListPane = usersPane.addListPane({
                 height: 20,
                 defaultSlots: this.createUserSlots(players),
-                layout: {
-                    height: 4.4,
+                slotConfig: {
+                    height: 4,
                     clickable: false,
-                    entryLayout: [ {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Image,
-                        size: 5
-                    }, {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Text,
-                        size: server_editor_namespaceObject.LayoutFlex.Grow,
-                        alignment: server_editor_namespaceObject.LayoutAlignment.Start
-                    }, {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Image,
-                        size: 4
-                    }, {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Button,
-                        size: 4
-                    } ]
+                    outline: true,
+                    variant: server_editor_namespaceObject.ListPaneSlotVariant.Muted,
+                    entryLayout: {
+                        mainSection: [ {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Image,
+                            size: 3.2
+                        }, {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Text,
+                            size: server_editor_namespaceObject.LayoutFlex.Grow,
+                            alignment: server_editor_namespaceObject.LayoutAlignment.Start
+                        } ],
+                        outerSection: [ {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Image,
+                            size: 3.6,
+                            alignment: server_editor_namespaceObject.LayoutAlignment.Center
+                        }, {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Button,
+                            size: 4
+                        } ]
+                    }
                 }
             });
             this.startPlayerListSynchronization();
@@ -20407,8 +20780,8 @@ var __webpack_exports__ = {};
                 return;
             }
             const locationPane = this.parentPane.createSubPane({
-                title: "resourcePack.editor.goToMark.pane.locationPane.title",
-                collapsed: false
+                collapsed: false,
+                hasExpander: false
             });
             this.deleteConfirmDialog = this.uiSession.dialogManager.registerDialog({
                 uniqueId: "navigation:deleteConfirm",
@@ -20447,28 +20820,6 @@ var __webpack_exports__ = {};
                 title: "editor.sharedUtils.modaldialogconfirmation.cancel",
                 variant: server_editor_namespaceObject.ButtonVariant.Secondary
             });
-            locationPane.addToggleGroup(this.quickActionMode, {
-                entries: [ {
-                    icon: "pack://textures/editor/Point-Subtract.png",
-                    value: 1
-                }, {
-                    icon: "trashCanIcon",
-                    tooltip: "resourcePack.editor.goToMark.pane.locationPane.delete",
-                    value: 2
-                } ],
-                onChange: newValue => {
-                    switch (newValue) {
-                      case 1:
-                        this.toggleSelectAll();
-                        break;
-
-                      case 2:
-                        this.deleteSelectedLocations();
-                        break;
-                    }
-                    this.quickActionMode.set(0);
-                }
-            });
             const locationListHeaderPane = locationPane.createSubPane({
                 hasExpander: false,
                 hasMargins: false,
@@ -20494,6 +20845,7 @@ var __webpack_exports__ = {};
             locationPane.addDivider();
             this.storedLocationsList = locationPane.addListPane({
                 height: 20,
+                viewSortType: server_editor_namespaceObject.ListPaneViewSortType.AtoZ,
                 onSlotClicked: slot => {
                     const userData = slot.getUserData();
                     this.selectedLocationIndex = userData;
@@ -20507,21 +20859,65 @@ var __webpack_exports__ = {};
                     }
                 },
                 defaultSlots: this.createLocationSlots(),
-                layout: {
+                slotConfig: {
                     height: 4.4,
                     clickable: true,
-                    entryLayout: [ {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Bool,
-                        size: 6
-                    }, {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Image,
-                        size: 4
-                    }, {
-                        type: server_editor_namespaceObject.ListPaneEntryType.Text,
-                        size: server_editor_namespaceObject.LayoutFlex.Grow,
-                        alignment: server_editor_namespaceObject.LayoutAlignment.Start
-                    } ]
+                    variant: server_editor_namespaceObject.ListPaneSlotVariant.Secondary,
+                    entryLayout: {
+                        mainSection: [ {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Bool,
+                            size: 3.6
+                        }, {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Image,
+                            size: 3.2
+                        }, {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Text,
+                            size: server_editor_namespaceObject.LayoutFlex.Grow,
+                            alignment: server_editor_namespaceObject.LayoutAlignment.Start
+                        } ],
+                        outerSection: [ {
+                            type: server_editor_namespaceObject.ListPaneEntryType.Button,
+                            size: 4
+                        } ]
+                    }
                 }
+            });
+            this.storedLocationsList.buildViewControl({
+                actions: [ {
+                    id: StoredLocationActionType.Check,
+                    icon: "activateIcon",
+                    label: ""
+                }, {
+                    id: StoredLocationActionType.Delete,
+                    icon: "trashCanIcon",
+                    label: "resourcePack.editor.goToMark.pane.locationPane.delete"
+                } ],
+                onActionClicked: actionId => {
+                    switch (actionId) {
+                      case StoredLocationActionType.Check:
+                        this.toggleSelectAll();
+                        break;
+
+                      case StoredLocationActionType.Delete:
+                        this.deleteSelectedLocations();
+                        break;
+                    }
+                },
+                onFilterChanged: visibleItems => {
+                    this.visibleLocationPaneSlots = new Set(visibleItems);
+                    if (this.storedLocationsList) {
+                        for (let i = 0; i < this.storedLocations.length; i++) {
+                            const slot = this.storedLocationsList.getSlotByIndex(i);
+                            if (slot && !this.visibleLocationPaneSlots.has(slot.id)) {
+                                const checkbox = slot.getEntry(0);
+                                checkbox?.setValue(false);
+                            }
+                        }
+                    }
+                },
+                sortOptions: [ server_editor_namespaceObject.ListPaneViewSortType.AtoZ, server_editor_namespaceObject.ListPaneViewSortType.ZtoA ],
+                filterFlags: server_editor_namespaceObject.ListViewControlFilterFlags.Name,
+                visible: true
             });
             this.locationDetailsPane = this.parentPane.drawerPane;
             this.locationDetailsPane.onPropertyPaneVisibilityUpdated.subscribe((data => {
@@ -20597,11 +20993,20 @@ var __webpack_exports__ = {};
                         type: server_editor_namespaceObject.ImageResourceType.Icon
                     }
                 }, {
-                    type: server_editor_namespaceObject.ListPaneEntryType.Text,
-                    value: location.name
+                    type: server_editor_namespaceObject.ListPaneEntryType.Text
+                }, {
+                    type: server_editor_namespaceObject.ListPaneEntryType.Button,
+                    icon: "pack://textures/editor/Teleport.png",
+                    tooltip: "resourcePack.editor.goToMark.pane.teleport",
+                    variant: server_editor_namespaceObject.ButtonVariant.Secondary,
+                    onClick: () => {
+                        this.teleportTo(location.location);
+                        this.telemetryManager.fireTelemetryEvent(NavigationTelemetry.TeleportToLocation);
+                    }
                 } ],
                 options: {
-                    userData: index
+                    userData: index,
+                    title: location.name
                 }
             })));
         }
@@ -20647,14 +21052,14 @@ var __webpack_exports__ = {};
                         const existingNames = this.storedLocations.filter(((_, index) => index !== this.selectedLocationIndex)).map((loc => loc.name.toLowerCase()));
                         let finalName = trimmedName;
                         if (existingNames.includes(finalName.toLowerCase())) {
-                            finalName = this.getUniqueLocationName(finalName);
+                            finalName = this.getUniqueLocationName(finalName, this.selectedLocationIndex);
                             nameObservable.set(finalName);
                         }
                         this.storedLocations[this.selectedLocationIndex].name = finalName;
                         this.storeLocationsToPlayer();
                         this.refreshLocationsList();
                     } else if (trimmedName.length === 0) {
-                        const defaultName = this.getUniqueLocationName("Location");
+                        const defaultName = this.getUniqueLocationName("Location", this.selectedLocationIndex);
                         this.storedLocations[this.selectedLocationIndex].name = defaultName;
                         nameObservable.set(defaultName);
                         this.storeLocationsToPlayer();
@@ -20774,11 +21179,11 @@ var __webpack_exports__ = {};
             this.mapPayload?.set(this._createMiniMap());
             this.telemetryManager.fireTelemetryEvent(NavigationTelemetry.CreateNewLocation);
         }
-        getUniqueLocationName(baseName) {
+        getUniqueLocationName(baseName, excludeIndex) {
             if (!baseName || baseName.trim() === "") {
                 let counter = 1;
                 let defaultName = `Location ${counter}`;
-                const existingNames = this.storedLocations.map((loc => loc.name.toLowerCase()));
+                const existingNames = this.storedLocations.filter(((_, index) => index !== excludeIndex)).map((loc => loc.name.toLowerCase()));
                 while (existingNames.includes(defaultName.toLowerCase())) {
                     counter++;
                     defaultName = `Location ${counter}`;
@@ -20786,7 +21191,7 @@ var __webpack_exports__ = {};
                 return defaultName;
             }
             baseName = baseName.trim();
-            const existingNames = this.storedLocations.map((loc => loc.name.toLowerCase()));
+            const existingNames = this.storedLocations.filter(((_, index) => index !== excludeIndex)).map((loc => loc.name.toLowerCase()));
             if (!existingNames.includes(baseName.toLowerCase())) {
                 return baseName;
             }
@@ -20810,7 +21215,7 @@ var __webpack_exports__ = {};
             let hasUnchecked = false;
             for (let i = 0; i < this.storedLocations.length; i++) {
                 const slot = this.storedLocationsList.getSlotByIndex(i);
-                if (slot) {
+                if (slot && (!this.visibleLocationPaneSlots || this.visibleLocationPaneSlots.has(slot.id))) {
                     const checkbox = slot.getEntry(0);
                     if (checkbox && !checkbox.value) {
                         hasUnchecked = true;
@@ -20823,7 +21228,11 @@ var __webpack_exports__ = {};
                 if (slot) {
                     const checkbox = slot.getEntry(0);
                     if (checkbox) {
-                        checkbox.setValue(hasUnchecked);
+                        if (this.visibleLocationPaneSlots && !this.visibleLocationPaneSlots.has(slot.id)) {
+                            checkbox.setValue(false);
+                        } else {
+                            checkbox.setValue(hasUnchecked);
+                        }
                     }
                 }
             }
@@ -24811,6 +25220,8 @@ var __webpack_exports__ = {};
                     height: 12,
                     radius: 10,
                     hideRotation: true
+                }), new server_editor_namespaceObject.CuboidBrushShape({
+                    hideRotation: true
                 }) ],
                 SETTINGS_MAP: {
                     [server_editor_namespaceObject.FlattenMode.Both]: {
@@ -24929,28 +25340,32 @@ var __webpack_exports__ = {};
                     cursorProperties: this._terrainDefaults.DEFAULT_CURSOR_PROPERTIES,
                     brushOffset: this._terrainDefaults.DEFAULT_BRUSH_OFFSET,
                     brushShapes: this._flattenDefaults.BRUSH_SHAPES,
-                    paintMode: server_editor_namespaceObject.PaintMode.Flatten
+                    paintMode: server_editor_namespaceObject.PaintMode.Flatten,
+                    showMasksAndFilters: true
                 },
                 [TerrainMode.SmoothMode]: {
                     terrainMode: TerrainMode.SmoothMode,
                     cursorProperties: this._terrainDefaults.DEFAULT_CURSOR_PROPERTIES,
                     brushOffset: this._terrainDefaults.DEFAULT_BRUSH_OFFSET,
                     brushShapes: this._smoothRoughDefaults.BRUSH_SHAPES,
-                    paintMode: server_editor_namespaceObject.PaintMode.Smooth
+                    paintMode: server_editor_namespaceObject.PaintMode.Smooth,
+                    showMasksAndFilters: true
                 },
                 [TerrainMode.RoughenMode]: {
                     terrainMode: TerrainMode.RoughenMode,
                     cursorProperties: this._terrainDefaults.DEFAULT_CURSOR_PROPERTIES,
                     brushOffset: this._terrainDefaults.DEFAULT_BRUSH_OFFSET,
                     brushShapes: this._smoothRoughDefaults.BRUSH_SHAPES,
-                    paintMode: server_editor_namespaceObject.PaintMode.Roughen
+                    paintMode: server_editor_namespaceObject.PaintMode.Roughen,
+                    showMasksAndFilters: true
                 },
                 [TerrainMode.ElevationMode]: {
                     terrainMode: TerrainMode.ElevationMode,
                     cursorProperties: this._terrainDefaults.DEFAULT_CURSOR_PROPERTIES,
                     brushOffset: this._terrainDefaults.DEFAULT_BRUSH_OFFSET,
                     brushShapes: this._elevationDefaults.BRUSH_SHAPES,
-                    paintMode: server_editor_namespaceObject.PaintMode.Elevation
+                    paintMode: server_editor_namespaceObject.PaintMode.Elevation,
+                    showMasksAndFilters: false
                 }
             };
             this._terrainMode = (0, server_editor_namespaceObject.makeObservable)(this._terrainDefaults.DEFAULT_MODE);
@@ -24979,11 +25394,12 @@ var __webpack_exports__ = {};
             this._toolPane = this._initPane();
             this._loadSettings();
             this._cursorControl = this._initCursorControl(this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].cursorProperties);
-            this._brushControl = this._initBrushControl(this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].paintMode, this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].brushShapes);
+            this._brushControl = this._initBrushControl(this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].paintMode, this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].brushShapes, this.TERRAIN_SETTINGS_MAP[this._terrainDefaults.DEFAULT_MODE].showMasksAndFilters);
             this._widgetGroup = this._initVisualizer();
             this._initFalloffVisualizer();
             this._tool.bindPropertyPane(this._toolPane);
             this._registerMousePaintInputs();
+            this._registerKeyButtonInputs();
             this._brushOffsetBackup = this._session.extensionContext.brushShapeManager.getBrushShapeOffset();
             this._tool.onModalToolActivation.subscribe((data => {
                 this._isActive = data.isActiveTool;
@@ -25400,10 +25816,12 @@ var __webpack_exports__ = {};
             cursorControl.initialize();
             return cursorControl;
         }
-        _initBrushControl(paintMode, brushShapes) {
+        _initBrushControl(paintMode, brushShapes, showMasksAndFilters) {
             const brushControl = new BrushPaintSharedControl(this._session, this._tool, this._toolPane, {
                 paintMode
-            }, brushShapes);
+            }, brushShapes, {
+                hideFillConstraints: !showMasksAndFilters
+            });
             brushControl.initialize();
             return brushControl;
         }
@@ -25469,50 +25887,74 @@ var __webpack_exports__ = {};
                             this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.StartPaining);
                             this._beginPainting();
                         } else if (mouseProps.inputType === server_editor_namespaceObject.MouseInputType.ButtonUp && this._isPainting) {
-                            switch (this._terrainMode.value) {
-                              case TerrainMode.ElevationMode:
-                                {
-                                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
-                                        terrainMode: this._terrainMode.value,
-                                        elevationMode: this._elevationMode.value,
-                                        intensity: this._elevationIntensity.value,
-                                        falloff: this._elevationFalloff.value,
-                                        sampleLayers: this._elevationSampleLayers.value,
-                                        brushRadius: this._elevationBrushRadius.value
-                                    });
-                                    break;
-                                }
-
-                              case TerrainMode.FlattenMode:
-                                {
-                                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
-                                        terrainMode: this._terrainMode.value,
-                                        flattenMode: this._flattenMode.value,
-                                        intensity: this._flattenIntensity.value,
-                                        floorBlockOverride: this._floorBlockOverride.value,
-                                        smoothing: this._flattenSmoothing.value,
-                                        brushOffset: this._session.extensionContext.brushShapeManager.getBrushShapeOffset()
-                                    });
-                                    break;
-                                }
-
-                              case TerrainMode.RoughenMode:
-                              case TerrainMode.SmoothMode:
-                                {
-                                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
-                                        terrainMode: this._terrainMode.value,
-                                        intensity: this._smoothRoughIntensity.value,
-                                        brushOffset: this._session.extensionContext.brushShapeManager.getBrushShapeOffset()
-                                    });
-                                    break;
-                                }
-                            }
+                            this._fireTelemetryEvent();
                             this._endPainting();
                         }
                     }
                 }
             });
             this._tool.registerMouseButtonBinding(action);
+        }
+        _registerKeyButtonInputs() {
+            const action = this._session.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.StatefulAction,
+                onExecute: state => {
+                    if (state) {
+                        this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.StartPaining);
+                        this._beginPainting();
+                    } else {
+                        this._fireTelemetryEvent();
+                        this._endPainting();
+                    }
+                }
+            });
+            this._tool.registerKeyBinding(action, {
+                key: server_editor_namespaceObject.KeyboardKey.ENTER
+            }, {
+                uniqueId: `editor:terrainKeyBinding:apply`,
+                label: `resourcePack.editor.toolRail.Terrain.keyBinding.apply.title`,
+                tooltip: `resourcePack.editor.toolRail.Terrain.keyBinding.apply.tooltip`
+            });
+        }
+        _fireTelemetryEvent() {
+            switch (this._terrainMode.value) {
+              case TerrainMode.ElevationMode:
+                {
+                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
+                        terrainMode: this._terrainMode.value,
+                        elevationMode: this._elevationMode.value,
+                        intensity: this._elevationIntensity.value,
+                        falloff: this._elevationFalloff.value,
+                        sampleLayers: this._elevationSampleLayers.value,
+                        brushRadius: this._elevationBrushRadius.value
+                    });
+                    break;
+                }
+
+              case TerrainMode.FlattenMode:
+                {
+                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
+                        terrainMode: this._terrainMode.value,
+                        flattenMode: this._flattenMode.value,
+                        intensity: this._flattenIntensity.value,
+                        floorBlockOverride: this._floorBlockOverride.value,
+                        smoothing: this._flattenSmoothing.value,
+                        brushOffset: this._session.extensionContext.brushShapeManager.getBrushShapeOffset()
+                    });
+                    break;
+                }
+
+              case TerrainMode.RoughenMode:
+              case TerrainMode.SmoothMode:
+                {
+                    this._telemetryManager.fireTelemetryEvent(TerrainTelemetry.EndPainting, {
+                        terrainMode: this._terrainMode.value,
+                        intensity: this._smoothRoughIntensity.value,
+                        brushOffset: this._session.extensionContext.brushShapeManager.getBrushShapeOffset()
+                    });
+                    break;
+                }
+            }
         }
         _switchToFlattenMode(newMode) {
             if (this._terrainMode.value !== TerrainMode.FlattenMode) {
@@ -25542,13 +25984,16 @@ var __webpack_exports__ = {};
             this._widgetGroup.visible = false;
             const terrainSettings = this.TERRAIN_SETTINGS_MAP[this._terrainMode.value];
             this._brushControl.switchBrushPaintMode(terrainSettings.paintMode);
-            this._brushControl.updateBrushShapes(terrainSettings.brushShapes);
             this._brushControl.session.extensionContext.brushShapeManager.setBrushShapeOffset(terrainSettings.brushOffset);
+            this._brushControl.displayShapeSettings(true);
+            this._brushControl.toggleFillConstraintsVisibility(terrainSettings.showMasksAndFilters);
             if (this._terrainMode.value === TerrainMode.FlattenMode) {
                 this._onFlattenModeChanged();
             } else if (this._terrainMode.value === TerrainMode.ElevationMode) {
+                this._brushControl.displayShapeSettings(false);
                 this._onElevationModeChanged();
             }
+            this._brushControl.updateBrushShapes(terrainSettings.brushShapes);
             this._brushControl.session.extensionContext.brushShapeManager.setTerrainStrength(this._terrainMode.value === TerrainMode.FlattenMode ? this._flattenIntensity.value : this._terrainMode.value === TerrainMode.ElevationMode ? this._elevationIntensity.value : this._smoothRoughIntensity.value);
             this._updatePropertyVisibilities();
             this._toolPane.show();
@@ -26716,7 +27161,6 @@ var __webpack_exports__ = {};
             return true;
         }
         _selectContiguousFaceForQuickExtrude(uiSession, selectionDirection, block, checkTolerance) {
-            uiSession.extensionContext.selectionManager.volume.clear();
             const FaceSelection = new Vector3Set;
             if (block) {
                 const faceSize = (this.faceSize.value - 1) / 2;
@@ -27185,12 +27629,17 @@ var __webpack_exports__ = {};
                 this.isActiveTool = data.isActiveTool;
                 if (data.isActiveTool) {
                     this._recalculateSpacing(uiSession);
+                    this._updateAllLimits();
                     this._queueVisualizationRedraw(uiSession);
                 } else {
                     this._clearVisualization();
                 }
             }));
-            this.selectionChangeEventSubscriptionHandle = uiSession.extensionContext.afterEvents.SelectionChange.subscribe((() => this._redrawVisualization(this.session)));
+            this.selectionChangeEventSubscriptionHandle = uiSession.extensionContext.afterEvents.SelectionChange.subscribe((() => {
+                this._recalculateSpacing(uiSession);
+                this._updateAllLimits();
+                this._redrawVisualization(this.session);
+            }));
             return tool;
         }
         _clearVisualization() {
@@ -27507,7 +27956,7 @@ var __webpack_exports__ = {};
                 hasExpander: false
             });
             pane.beginConstruct();
-            pane.addNumber(this.lineRepetitions, {
+            this.lineRepetitionsUIElement = pane.addNumber(this.lineRepetitions, {
                 title: "resourcePack.editor.toolRail.RepeaterTool.pane.Repetitions",
                 tooltip: "resourcePack.editor.toolRail.RepeaterTool.pane.Repetitions.tooltip",
                 min: RepeaterTool.DEFAULT_MIN_REPETITIONS,
@@ -27616,10 +28065,57 @@ var __webpack_exports__ = {};
             } else if (repeatCount === 2) {
                 newMax = RepeaterTool.SQUARE_ROOT_OF_MAX_WIDGETS;
             }
+            const spacing = this.spacing.value;
+            if (this.gridUniformRepeatX.value && spacing.x > 0) {
+                const offsetMaxX = Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.x);
+                if (offsetMaxX >= 1 && offsetMaxX < newMax) {
+                    newMax = offsetMaxX;
+                }
+            }
+            if (this.gridUniformRepeatY.value && spacing.y > 0) {
+                const offsetMaxY = Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.y);
+                if (offsetMaxY >= 1 && offsetMaxY < newMax) {
+                    newMax = offsetMaxY;
+                }
+            }
+            if (this.gridUniformRepeatZ.value && spacing.z > 0) {
+                const offsetMaxZ = Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.z);
+                if (offsetMaxZ >= 1 && offsetMaxZ < newMax) {
+                    newMax = offsetMaxZ;
+                }
+            }
+            if (newMax < RepeaterTool.DEFAULT_MIN_REPETITIONS) {
+                newMax = RepeaterTool.DEFAULT_MIN_REPETITIONS;
+            }
             this.gridUniformRepetitionsUIElement?.updateLimits({
                 min: RepeaterTool.DEFAULT_MIN_REPETITIONS,
                 max: newMax
             });
+        }
+        _updateLineLimit() {
+            const spacing = this.spacing.value;
+            const maxSpacing = Math.max(spacing.x, spacing.y, spacing.z);
+            let newMax = RepeaterTool.DEFAULT_MAX_REPETITIONS;
+            if (maxSpacing > 0) {
+                const offsetMax = Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / maxSpacing);
+                if (offsetMax >= 1 && offsetMax < newMax) {
+                    newMax = offsetMax;
+                }
+            }
+            if (newMax < RepeaterTool.DEFAULT_MIN_REPETITIONS) {
+                newMax = RepeaterTool.DEFAULT_MIN_REPETITIONS;
+            }
+            this.lineRepetitionsUIElement?.updateLimits({
+                min: RepeaterTool.DEFAULT_MIN_REPETITIONS,
+                max: newMax
+            });
+        }
+        _updateAllLimits() {
+            this._updateLineLimit();
+            this._updateGridUniformLimit();
+            this._updateGridSeparateLimits(server_editor_namespaceObject.Axis.X);
+            this._updateGridSeparateLimits(server_editor_namespaceObject.Axis.Y);
+            this._updateGridSeparateLimits(server_editor_namespaceObject.Axis.Z);
         }
         _createGridSeparateSubPane(uiSession, parentPane) {
             const pane = parentPane.createSubPane({
@@ -27685,8 +28181,15 @@ var __webpack_exports__ = {};
             const currentZ = this.gridSeparateRepetitionsZ.value + 1;
             const currentMaxUsed = currentX * currentY * currentZ;
             const currentRoom = RepeaterTool.MAX_WIDGETS - currentMaxUsed;
+            const spacing = this.spacing.value;
+            const offsetMaxX = spacing.x > 0 ? Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.x) : RepeaterTool.DEFAULT_MAX_REPETITIONS;
+            const offsetMaxY = spacing.y > 0 ? Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.y) : RepeaterTool.DEFAULT_MAX_REPETITIONS;
+            const offsetMaxZ = spacing.z > 0 ? Math.floor(RepeaterTool.MAX_WIDGET_OFFSET / spacing.z) : RepeaterTool.DEFAULT_MAX_REPETITIONS;
             if (axisChanged !== server_editor_namespaceObject.Axis.X) {
                 let newMaxX = currentX + Math.floor(currentRoom / (currentY * currentZ)) - 1;
+                if (offsetMaxX >= 0 && offsetMaxX < newMaxX) {
+                    newMaxX = offsetMaxX;
+                }
                 if (newMaxX <= 0) {
                     newMaxX = 1;
                     if (this.gridSeparateRepetitionsXUIElement) {
@@ -27704,6 +28207,9 @@ var __webpack_exports__ = {};
             }
             if (axisChanged !== server_editor_namespaceObject.Axis.Y) {
                 let newMaxY = currentY + Math.floor(currentRoom / (currentX * currentZ)) - 1;
+                if (offsetMaxY >= 0 && offsetMaxY < newMaxY) {
+                    newMaxY = offsetMaxY;
+                }
                 if (newMaxY <= 0) {
                     newMaxY = 1;
                     if (this.gridSeparateRepetitionsYUIElement) {
@@ -27721,6 +28227,9 @@ var __webpack_exports__ = {};
             }
             if (axisChanged !== server_editor_namespaceObject.Axis.Z) {
                 let newMaxZ = currentZ + Math.floor(currentRoom / (currentX * currentY)) - 1;
+                if (offsetMaxZ >= 0 && offsetMaxZ < newMaxZ) {
+                    newMaxZ = offsetMaxZ;
+                }
                 if (newMaxZ <= 0) {
                     newMaxZ = 1;
                     if (this.gridSeparateRepetitionsZUIElement) {
@@ -27871,6 +28380,7 @@ var __webpack_exports__ = {};
     RepeaterTool.DEFAULT_MAX_REPETITIONS = 100;
     RepeaterTool.DEFAULT_MIN_SEPARATE_REPETITIONS = 0;
     RepeaterTool.DEFAULT_REPETITIONS = 5;
+    RepeaterTool.MAX_WIDGET_OFFSET = 100;
     var FarmTelemetry;
     (function(FarmTelemetry) {
         FarmTelemetry["Place"] = "Place";
@@ -27962,7 +28472,7 @@ var __webpack_exports__ = {};
                 },
                 boundsOffset: {
                     x: (this._commonSettings.farmWidth.value - 1) / -2,
-                    y: -1,
+                    y: 0,
                     z: (this._commonSettings.farmLength.value - 1) / -2
                 }
             });
@@ -28031,7 +28541,7 @@ var __webpack_exports__ = {};
                     };
                     this._widgetBoxComponent.boundsOffset = {
                         x: (this._commonSettings.farmWidth.value - 1) / -2,
-                        y: -1,
+                        y: 0,
                         z: (this._commonSettings.farmLength.value - 1) / -2
                     };
                 }
@@ -28050,7 +28560,7 @@ var __webpack_exports__ = {};
                     };
                     this._widgetBoxComponent.boundsOffset = {
                         x: (this._commonSettings.farmWidth.value - 1) / -2,
-                        y: -1,
+                        y: 0,
                         z: (this._commonSettings.farmLength.value - 1) / -2
                     };
                     this.saveSettings();
@@ -28230,7 +28740,7 @@ var __webpack_exports__ = {};
                             const entity = region.spawnEntity(entityType, locationAbove);
                             uiSession.extensionContext.transactionManager.addEntityOperation(entity, server_editor_namespaceObject.EntityOperationType.Create);
                             didPlaceAnimal = true;
-                        } else if (region.isLiquidBlock(location) && possibleCrops.length > 0) {
+                        } else if (!region.isLiquidBlock(location) && possibleCrops.length > 0) {
                             const crop = getRandomInt(possibleCrops.length - 1);
                             const blockType = possibleCrops[crop];
                             region.setBlockType(locationAbove, blockType);
@@ -28928,6 +29438,7 @@ var __webpack_exports__ = {};
             return tool;
         }
         _highlightBlock(position) {
+            this.cursorProperties.projectThroughLiquid = this.uiSession.extensionContext.cursor.getProperties().projectThroughLiquid;
             const player = this.uiSession.extensionContext.player;
             const targetBlock = player.dimension.getBlock(position);
             const targetBlockStates = targetBlock?.permutation.getAllStates();
@@ -30671,6 +31182,10 @@ var __webpack_exports__ = {};
                         y: targetBlock.y,
                         z: targetBlock.z
                     }, updatedJigsawData);
+                    this._saveJigButton.enable = false;
+                    this.uiSession.log.info("Jigsaw block data updated.", {
+                        channelMask: server_editor_namespaceObject.LogChannel.All
+                    });
                 }
             });
             const turnIntoSubpane = propPane.createSubPane({
@@ -30727,7 +31242,7 @@ var __webpack_exports__ = {};
                         tooltip: "resourcePack.editor.toolRail.blockInspectorTool.jigsawProperties.swap.tooltip"
                     } ]
                 } ],
-                layout: {
+                slotConfig: {
                     height: 4.4,
                     outline: true,
                     columns: 3,
@@ -33468,8 +33983,10 @@ var __webpack_exports__ = {};
         }
         constructor(_uiSession) {
             this._uiSession = _uiSession;
+            this._loadedFiles = new Map;
             this._fileChanged = false;
             this._structuresIds = [];
+            this._poolFolders = new Map;
             this._leaveVoidWorld = () => {};
             this._inVoidWorld = false;
             this.openMenuAction = this._uiSession.actionManager.createAction({
@@ -33495,12 +34012,10 @@ var __webpack_exports__ = {};
                 z: 0
             };
             this._props = {
-                editTemplatePoolIndex: (0, server_editor_namespaceObject.makeObservable)(0),
-                jigsawGenerationDepth: (0, server_editor_namespaceObject.makeObservable)(1),
-                jigsawHorizontalSize: (0, server_editor_namespaceObject.makeObservable)(128),
+                jigsawGenerationDepth: (0, server_editor_namespaceObject.makeObservable)(5),
+                jigsawHorizontalSize: (0, server_editor_namespaceObject.makeObservable)(164),
                 lockJigsawSeed: (0, server_editor_namespaceObject.makeObservable)(false),
                 bypassValidation: (0, server_editor_namespaceObject.makeObservable)(false),
-                fileName: (0, server_editor_namespaceObject.makeObservable)(""),
                 startingTarget: (0, server_editor_namespaceObject.makeObservable)(""),
                 skipValidationWarningConfirmation: (0, server_editor_namespaceObject.makeObservable)(false)
             };
@@ -33527,6 +34042,24 @@ var __webpack_exports__ = {};
             }));
             this._newTemplateDialog = new ModalDialogStringInput(this._uiSession, this._rootPropertyPane, (name => this._validateTemplateName(name)));
             this._newRegistryDialog = new ModalDialogStringInput(this._uiSession, this._rootPropertyPane, (name => this._validateRegistryName(name)));
+            this._modalCollectionDeleteOverlay = this._rootPropertyPane.createModalOverlayPane();
+            this._modalCollectionDeleteOverlay.contentPane.addText("resourcePack.editor.jigsaw.pane.registryDeletion.confirmation", {
+                border: false,
+                alignment: server_editor_namespaceObject.LayoutAlignment.Center
+            });
+            this._modalCollectionDeleteOverlay.controlPane.addButton((() => {
+                this._modalCollectionDeleteOverlay.hide();
+                this.handleRegistryDeleteRequest();
+            }), {
+                title: "resourcePack.editor.selectionTool.quickAction.deleteSelection",
+                variant: server_editor_namespaceObject.ButtonVariant.Destructive
+            });
+            this._modalCollectionDeleteOverlay.controlPane.addButton((() => {
+                this._modalCollectionDeleteOverlay.hide();
+            }), {
+                title: "resourcePack.editor.chunkManagement.warningModal.cancel",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary
+            });
             this._skipValidationModal = this._rootPropertyPane.createModalOverlayPane({});
             this._generatingJigsawModal = this._rootPropertyPane.createModalOverlayPane({});
             this._init();
@@ -33554,6 +34087,7 @@ var __webpack_exports__ = {};
         }
         teardown() {
             this._uiSession.log.debug(`Shutting down ${JigsawModeBehavior.BEHAVIOR_NAME}`);
+            this._saveRegistryData(true);
             if (this._inVoidWorld) {
                 this._leaveVoidWorld();
             }
@@ -33654,7 +34188,8 @@ var __webpack_exports__ = {};
             this._editingSubpane = this._rootPropertyPane.createSubPane({
                 title: "resourcePack.editor.jigsaw.pane.edit.heading",
                 infoTooltip: {
-                    title: "resourcePack.editor.jigsaw.pane.edit.tooltip"
+                    title: "resourcePack.editor.jigsaw.pane.edit.heading",
+                    description: [ "resourcePack.editor.jigsaw.pane.edit.tooltip" ]
                 },
                 hasExpander: true,
                 hasMargins: true
@@ -33662,9 +34197,9 @@ var __webpack_exports__ = {};
             this.generateRegistrySelectionSubpane();
             this._regNameList = this._jigsawService.getRegistryList();
             this.updateJigsawRegistryDropdown();
-            this.generateTemplatePoolSelectionSubpane();
-            this._editingSubpane.addDivider();
+            this.createCollectionTreeSubpane();
             this.initializeFromRegistry(this.currentRegistryName);
+            this.setCollectionUIVisible(this._regNameList.length > 0);
             this.createMenuItem();
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawPaneInitialized, {
                 registryCount: this._regNameList.length,
@@ -33689,16 +34224,25 @@ var __webpack_exports__ = {};
                 };
                 return item;
             }));
-            this._editingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, 0);
             this._generatingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, 0);
-            if (this._editingTemplatePoolSubpane) {
-                this._editingSubpane.removeSubPane(this._editingTemplatePoolSubpane);
-            }
-            this._editingTemplatePoolSubpane = this._editingSubpane.createSubPane({
-                hasExpander: true,
-                hasMargins: true
-            });
-            this.refreshTemplatePoolEditorSubpane(0, undefined);
+            this._loadedFiles.clear();
+            this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].forEach((regFile => {
+                try {
+                    const file = JSON.parse(regFile.fileJson);
+                    this._loadedFiles.set(regFile.fileName, file);
+                } catch (error) {
+                    this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawFileCorruption, {
+                        fileName: regFile.fileName,
+                        registryName: this.currentRegistryName,
+                        corruptionType: "json_parse_error",
+                        errorMessage: error?.message || "Unknown JSON parse error"
+                    });
+                    this._uiSession.log.error(`Failed to parse Jigsaw Pool file: ${regFile.fileName}`, {
+                        channelMask: server_editor_namespaceObject.LogChannel.Toast
+                    });
+                }
+            }));
+            this.rebuildCollectionTree();
         }
         generateRegistrySelectionSubpane() {
             this._registryDropdownSubpane = this._editingSubpane.createSubPane({
@@ -33712,80 +34256,173 @@ var __webpack_exports__ = {};
                 entries: [],
                 onChange: newValue => {
                     this.handleRegistryDropdownChange(newValue);
+                },
+                style: {
+                    width: server_editor_namespaceObject.LayoutFlex.Grow,
+                    minWidth: 10
                 }
-            });
-            this._registryDropdownSubpane.addButton((() => {
-                const currentFileName = this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "";
-                if (currentFileName) {
-                    this._updateFile(currentFileName);
-                }
-                const empty = [];
-                this._jigsawService.setRegistryData(this.currentRegistryName, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Processor] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Structure] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.StructureSet] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool] ?? empty).then((regList => {
-                    this._regNameList = regList;
-                    this.updateJigsawRegistryDropdown();
-                })).catch((error => {
-                    this._uiSession.log.error(`Export error : ${error}`);
-                    this._regNameList = [];
-                }));
-                this._newRegistryDialog.activate("", "resourcePack.editor.jigsaw.pane.registryCreation.title", "resourcePack.editor.jigsaw.pane.registryCreation.heading").then((name => {
-                    this.handleRegistryCreateRequest(name);
-                })).catch((reason => {
-                    this._uiSession.log.error(`Error showing new Jigsaw Collection dialog: ${reason}`);
-                }));
-            }), {
-                icon: "plusIcon",
-                tooltip: "resourcePack.editor.jigsaw.pane.registryCreation.tooltip",
-                shrinkToIcon: true
-            });
-            this._registryDropdownSubpane.addButton((() => {
-                this.handleRegistryDeleteRequest();
-            }), {
-                icon: "trashCanIcon",
-                tooltip: "resourcePack.editor.jigsaw.pane.registryDeletion.tooltip",
-                shrinkToIcon: true
             });
         }
-        updateJigsawRegistryDropdown() {
-            const jigsawRegistryNameDropdownItems = this._regNameList.map(((name, index) => {
-                const item = {
-                    label: name,
-                    value: Number(index)
-                };
-                return item;
-            }));
-            if (jigsawRegistryNameDropdownItems && jigsawRegistryNameDropdownItems.length > 0) {
-                this._regNameDropdown.updateEntries(jigsawRegistryNameDropdownItems);
+        updateJigsawRegistryDropdown(selectedIndex) {
+            const newCollectionEntry = {
+                label: "resourcePack.editor.jigsaw.pane.registryDropdown.newCollection",
+                value: JigsawModeBehavior.NEW_COLLECTION_SENTINEL_VALUE
+            };
+            const jigsawRegistryNameDropdownItems = [ newCollectionEntry, ...this._regNameList.map(((name, index) => ({
+                label: name,
+                value: Number(index)
+            }))) ];
+            if (selectedIndex !== undefined) {
+                this._regNameDropdown.updateEntries(jigsawRegistryNameDropdownItems, selectedIndex);
+            } else if (this._regNameList.length > 0) {
+                this._regNameDropdown.updateEntries(jigsawRegistryNameDropdownItems, 0);
+            } else {
+                this._regNameDropdown.updateEntries(jigsawRegistryNameDropdownItems, JigsawModeBehavior.NO_SELECTION_SENTINEL_VALUE);
             }
         }
-        generateTemplatePoolSelectionSubpane() {
-            this._templatePoolDropdownSubpane = this._editingSubpane.createSubPane({
+        createCollectionTreeSubpane() {
+            const addPoolSubpane = this._editingSubpane.createSubPane({
                 layout: server_editor_namespaceObject.PaneLayoutType.Wrapping,
                 hasExpander: false,
                 hasMargins: false
             });
-            this._editingTemplatePoolDropdown = this._templatePoolDropdownSubpane.addDropdown(this._props.editTemplatePoolIndex, {
-                title: `resourcePack.editor.jigsaw.pane.templatePoolDropdown.title`,
-                tooltip: `resourcePack.editor.jigsaw.pane.templatePoolDropdown.tooltip`,
-                entries: [],
-                onChange: (newValue, oldValue) => {
-                    this.handleTemplatePoolDropdownChange(newValue, oldValue);
-                }
-            });
-            this._templatePoolDropdownSubpane.addButton((() => {
+            this._addPoolButton = addPoolSubpane.addButton((() => {
                 this._newTemplateDialog.activate("", "resourcePack.editor.jigsaw.pane.templatePoolCreation.title", "resourcePack.editor.jigsaw.pane.templatePoolCreation.heading").then((name => {
                     this.handleTemplatePoolCreateRequest(name);
                 })).catch((reason => {
                     this._uiSession.log.error(`Error showing new Jigsaw Pool dialog: ${reason}`);
                 }));
             }), {
-                icon: "plusIcon",
-                tooltip: "resourcePack.editor.jigsaw.pane.templatePoolCreation.tooltip"
+                title: "resourcePack.editor.jigsaw.pane.collectionTree.addPool.title",
+                tooltip: "resourcePack.editor.jigsaw.pane.templatePoolCreation.tooltip",
+                style: {
+                    width: server_editor_namespaceObject.LayoutFlex.Grow,
+                    minWidth: 10
+                }
             });
-            this._templatePoolDropdownSubpane.addButton((() => {
-                this.handleTemplatePoolDeleteRequest();
+            this._deleteRegistryButton = addPoolSubpane.addButton((() => {
+                this._modalCollectionDeleteOverlay.show();
             }), {
                 icon: "trashCanIcon",
-                tooltip: "resourcePack.editor.jigsaw.pane.templatePoolDeletion.tooltip"
+                tooltip: "resourcePack.editor.jigsaw.pane.registryDeletion.tooltip",
+                shrinkToIcon: true
+            });
+            this._exportButton = addPoolSubpane.addButton((() => {
+                const exportLocation = this._jigsawService.getExportLocation();
+                this._uiSession.log.info(`Jigsaw structures exported to: ${exportLocation}`);
+                this._uiSession.log.info(`Jigsaw structures exported to: ${exportLocation}`, {
+                    channelMask: server_editor_namespaceObject.LogChannel.Toast
+                });
+            }), {
+                icon: "exportIcon",
+                tooltip: "resourcePack.editor.exportProject.export",
+                shrinkToIcon: true
+            });
+            this._collectionTreeSubpane = this._rootPropertyPane.createSubPane({
+                layout: server_editor_namespaceObject.PaneLayoutType.Vertical,
+                hasExpander: false,
+                hasMargins: false
+            });
+            this._collectionTree = this._collectionTreeSubpane.addCollectionTree({
+                title: "resourcePack.editor.jigsaw.pane.edit.heading"
+            });
+        }
+        rebuildCollectionTree() {
+            if (this._collectionTreeSubpane) {
+                this._rootPropertyPane.removeSubPane(this._collectionTreeSubpane);
+            }
+            this._collectionTreeSubpane = this._rootPropertyPane.createSubPane({
+                layout: server_editor_namespaceObject.PaneLayoutType.Vertical,
+                hasExpander: false,
+                hasMargins: false
+            });
+            this._collectionTree = this._collectionTreeSubpane.addCollectionTree({
+                title: "resourcePack.editor.jigsaw.pane.edit.heading"
+            });
+            this._poolFolders.clear();
+            this.refreshStructureIds();
+            this._loadedFiles.forEach(((file, poolName) => {
+                this.addPoolFolderToTree(poolName, file);
+            }));
+        }
+        addPoolFolderToTree(poolName, file) {
+            const poolDisplayName = file["minecraft:template_pool"].description.identifier;
+            const folder = this._collectionTree.addFolder({
+                title: `resourcePack.editor.jigsaw.pane.collectionTree.poolPrefix`,
+                expanded: false,
+                removable: true,
+                userData: {
+                    poolName
+                },
+                action: {
+                    title: "resourcePack.editor.jigsaw.pane.collectionTree.addPiece.title",
+                    tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.add.tooltip",
+                    onClick: folder => {
+                        const userData = folder.userData;
+                        if (userData?.poolName) {
+                            this.handleAddNewTemplatePoolElement(userData.poolName);
+                        }
+                    }
+                },
+                onBeforeRemoved: folder => {
+                    const userData = folder.userData;
+                    if (userData?.poolName) {
+                        this.handleTemplatePoolDeleteRequest(userData.poolName);
+                    }
+                    return true;
+                },
+                onBeforeEntryRemoved: entry => {
+                    const entryUserData = entry.parent.userData;
+                    const pieceIndex = entry.index;
+                    if (entryUserData?.poolName) {
+                        this.handleDeleteTemplatePoolElementRequest(entryUserData.poolName, pieceIndex);
+                    }
+                    return true;
+                }
+            });
+            folder.setTitle({
+                id: "resourcePack.editor.jigsaw.pane.collectionTree.poolPrefix",
+                props: [ poolDisplayName ]
+            });
+            this._poolFolders.set(poolName, folder);
+            file["minecraft:template_pool"].elements.forEach(((element, index) => {
+                this.addPieceEntryToFolder(folder, poolName, element, index);
+            }));
+        }
+        addPieceEntryToFolder(folder, poolName, element, _index) {
+            let selectedId = this._structuresIds.findIndex((item => element.element?.location === item.structureId || element.element?.element_type === item.structureId));
+            if (selectedId === -1) {
+                selectedId = 0;
+            }
+            const entries = this._structuresIds.map((structure => ({
+                label: structure.structureDisplayName,
+                value: structure.structureId
+            })));
+            const entry = folder.addEntry({
+                image: {
+                    type: server_editor_namespaceObject.ImageResourceType.Icon,
+                    path: "structureIcon"
+                },
+                removable: true
+            });
+            entry.addDropdownItem({
+                value: this._structuresIds[selectedId]?.structureId ?? "minecraft:empty_pool_element",
+                title: "resourcePack.editor.jigsaw.pane.poolSubpane.structure.title",
+                tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.structure.tooltip",
+                menuOptions: entries,
+                onChange: newValue => {
+                    this.handleTemplatePoolElementStructureChangeByPoolName(poolName, entry.index, newValue);
+                }
+            });
+            entry.addNumberItem({
+                value: element.weight ?? JigsawModeBehavior.MINIMUM_WEIGHT,
+                title: "resourcePack.editor.jigsaw.pane.poolSubpane.weight.title",
+                tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.weight.tooltip",
+                min: JigsawModeBehavior.MINIMUM_WEIGHT,
+                max: JigsawModeBehavior.MAXIMUM_WEIGHT,
+                onChange: newValue => {
+                    this.handleTemplatePoolElementWeightChangeByPoolName(poolName, entry.index, newValue);
+                }
             });
         }
         createGenerateSubpane() {
@@ -33810,11 +34447,16 @@ var __webpack_exports__ = {};
                 isInteger: true,
                 tooltip: "resourcePack.editor.jigsaw.pane.generate.horizontalSize.tooltip"
             });
-            this._generateSubPane.addBool(this._props.lockJigsawSeed, {
+            const checkboxSubpane = this._generateSubPane.createSubPane({
+                layout: server_editor_namespaceObject.PaneLayoutType.Wrapping,
+                hasExpander: false,
+                hasMargins: false
+            });
+            checkboxSubpane.addBool(this._props.lockJigsawSeed, {
                 title: "resourcePack.editor.jigsaw.pane.generate.seed.title",
                 tooltip: "resourcePack.editor.jigsaw.pane.generate.seed.tooltip"
             });
-            this._generateSubPane.addBool(this._props.bypassValidation, {
+            checkboxSubpane.addBool(this._props.bypassValidation, {
                 title: "resourcePack.editor.jigsaw.pane.generate.bypassValidation.title",
                 tooltip: "resourcePack.editor.jigsaw.pane.generate.bypassValidation.tooltip"
             });
@@ -33827,8 +34469,7 @@ var __webpack_exports__ = {};
                 title: "resourcePack.editor.jigsaw.pane.generate.startTarget.title",
                 tooltip: "resourcePack.editor.jigsaw.pane.generate.startTarget.tooltip"
             });
-            this._buttonPane = this._generateSubPane.addButtonPane();
-            this._buttonPane.addButton(this._uiSession.actionManager.createAction({
+            this._generateSubPane.addButton(this._uiSession.actionManager.createAction({
                 actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                 onExecute: () => {
                     if (this._props.bypassValidation.value && !this._props.skipValidationWarningConfirmation.value) {
@@ -33841,7 +34482,7 @@ var __webpack_exports__ = {};
                 title: "resourcePack.editor.jigsaw.pane.generate.preview.title",
                 tooltip: "resourcePack.editor.jigsaw.pane.generate.preview.tooltip"
             });
-            this._buttonPane.addButton(this._uiSession.actionManager.createAction({
+            this._generateSubPane.addButton(this._uiSession.actionManager.createAction({
                 actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                 onExecute: () => {
                     if (this._inVoidWorld) {
@@ -33852,123 +34493,36 @@ var __webpack_exports__ = {};
                 title: "resourcePack.editor.jigsaw.misc.return.title",
                 tooltip: "resourcePack.editor.jigsaw.misc.return.tooltip"
             });
-            this._buttonPane.addButton(this._uiSession.actionManager.createAction({
-                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
-                onExecute: () => {
-                    const exportLocation = this._jigsawService.getExportLocation();
-                    this._uiSession.log.info(`Jigsaw structures exported to: ${exportLocation}`);
-                    this._uiSession.log.info(`Jigsaw structures exported to: ${exportLocation}`, {
-                        channelMask: server_editor_namespaceObject.LogChannel.Toast
-                    });
-                }
-            }), {
-                title: "resourcePack.editor.exportProject.export",
-                tooltip: "resourcePack.editor.exportProject.export"
-            });
         }
-        refreshTemplatePoolEditorSubpane(newValue, oldValue) {
-            this.refreshStructureIds();
-            if (this._fileChanged && oldValue !== undefined) {
-                const updatedFileName = this._editingTemplatePoolDropdown.getEntryByValue(oldValue)?.label ?? "";
-                this._updateFile(updatedFileName);
-            }
-            this._fileChanged = false;
-            this._editingSubpane.removeSubPane(this._editingTemplatePoolSubpane);
-            this._editingTemplatePoolSubpane = this._editingSubpane.createSubPane({
-                title: "resourcePack.editor.jigsaw.pane.poolSubpane.title",
-                infoTooltip: {
-                    title: "resourcePack.editor.jigsaw.pane.poolSubpane.tooltip"
-                },
-                hasExpander: true,
-                hasMargins: true
-            });
-            const itemName = this._editingTemplatePoolDropdown.getEntryByValue(newValue)?.label ?? "";
-            const selectedFile = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].find((item => item.fileName === itemName));
-            if (selectedFile) {
-                this._constructTemplatePoolSubpane(selectedFile);
-            }
-        }
-        _constructTemplatePoolSubpane(json) {
-            this._editingTemplatePoolSubpane.addButton(this._uiSession.actionManager.createAction({
-                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
-                onExecute: () => {
-                    this.handleAddNewTemplatePoolElement();
-                }
-            }), {
-                title: "resourcePack.editor.jigsaw.pane.poolSubpane.add.title",
-                tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.add.tooltip"
-            });
-            try {
-                this._loadedFile = JSON.parse(json.fileJson);
-                this._loadedFile["minecraft:template_pool"].elements.forEach(((element, index) => {
-                    this._addTemplatePoolElementSection(element, index);
-                    this._editingTemplatePoolSubpane.addDivider();
-                }));
-            } catch (error) {
-                this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawFileCorruption, {
-                    fileName: json.fileName,
-                    registryName: this.currentRegistryName,
-                    corruptionType: "json_parse_error",
-                    errorMessage: error?.message || "Unknown JSON parse error"
-                });
-                this._uiSession.log.error(`Failed to parse Jigsaw Pool file: ${json.fileName}`, {
-                    channelMask: server_editor_namespaceObject.LogChannel.Toast
-                });
-                throw error;
-            }
-        }
-        _addTemplatePoolElementSection(element, index) {
-            const elementSubpane = this._editingTemplatePoolSubpane.createSubPane({
-                layout: server_editor_namespaceObject.PaneLayoutType.Wrapping,
-                hasExpander: false
-            });
-            this.refreshStructureIds();
-            let selectedId = this._structuresIds.findIndex((item => element.element?.location === item || element.element?.element_type === item));
-            if (selectedId === -1) {
-                selectedId = 0;
-            }
-            const entries = this._structuresIds.map(((structure, index) => {
-                const item = {
-                    label: structure,
-                    value: index
-                };
-                return item;
-            }));
-            elementSubpane.addDropdown(selectedId, {
-                title: `resourcePack.editor.jigsaw.pane.poolSubpane.structure.title`,
-                tooltip: `resourcePack.editor.jigsaw.pane.poolSubpane.structure.tooltip`,
-                entries,
-                onChange: newValue => {
-                    this.handleTemplatePoolElementStructureChange(index, newValue);
-                }
-            });
-            elementSubpane.addNumber(element.weight ?? JigsawModeBehavior.MINIMUM_WEIGHT, {
-                title: "resourcePack.editor.jigsaw.pane.poolSubpane.weight.title",
-                min: JigsawModeBehavior.MINIMUM_WEIGHT,
-                max: JigsawModeBehavior.MAXIMUM_WEIGHT,
-                variant: server_editor_namespaceObject.NumberPropertyItemVariant.InputField,
-                isInteger: true,
-                tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.weight.tooltip",
-                onChange: newValue => {
-                    this.handleTemplatePoolElementWeightChange(index, newValue);
-                }
-            });
-            elementSubpane.addButton(this._uiSession.actionManager.createAction({
-                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
-                onExecute: () => {
-                    this.handleDeleteTemplatePoolElementRequest(index);
-                }
-            }), {
-                icon: "trashCanIcon",
-                tooltip: "resourcePack.editor.jigsaw.pane.poolSubpane.delete.tooltip"
-            });
+        setCollectionUIVisible(visible) {
+            this._addPoolButton.visible = visible;
+            this._exportButton.visible = visible;
+            this._deleteRegistryButton.visible = visible;
+            visible ? this._collectionTreeSubpane.show() : this._collectionTreeSubpane.hide();
         }
         handleRegistryDropdownChange(newValue) {
+            if (newValue === JigsawModeBehavior.NO_SELECTION_SENTINEL_VALUE) {
+                this.setCollectionUIVisible(false);
+                return;
+            }
+            if (newValue === JigsawModeBehavior.NEW_COLLECTION_SENTINEL_VALUE) {
+                const previousIndex = this._regNameList.indexOf(this.currentRegistryName);
+                if (previousIndex >= 0) {
+                    this.updateJigsawRegistryDropdown(previousIndex);
+                }
+                this._newRegistryDialog.activate("", "resourcePack.editor.jigsaw.pane.registryCreation.title", "resourcePack.editor.jigsaw.pane.registryCreation.heading").then((name => {
+                    this.handleRegistryCreateRequest(name);
+                })).catch((() => {
+                    this.updateJigsawRegistryDropdown(previousIndex >= 0 ? previousIndex : undefined);
+                }));
+                return;
+            }
             this._uiSession.log.info(`Selected Jigsaw Collection: ${newValue}`);
             const previousRegistry = this.currentRegistryName;
             const regName = String(newValue);
             this._currentRegFiles = this._jigsawService.getRegistryData(regName);
             this.initializeFromRegistry(this.currentRegistryName);
+            this.setCollectionUIVisible(true);
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawRegistrySelected, {
                 registryName: this.currentRegistryName,
                 templatePoolCount: this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool]?.length || 0,
@@ -33982,14 +34536,10 @@ var __webpack_exports__ = {};
                     existingRegistryCount: this._regNameList.length
                 });
                 this._regNameList.push(name);
-                this._regNameDropdown.updateEntries(this._regNameList.map(((name, index) => {
-                    const item = {
-                        label: name,
-                        value: Number(index)
-                    };
-                    return item;
-                })), this._regNameList.length - 1);
+                this.updateJigsawRegistryDropdown(this._regNameList.length - 1);
                 this.initializeFromRegistry(name);
+                this.setCollectionUIVisible(true);
+                this._saveRegistryData(false);
                 this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawRegistryCreated, {
                     registryName: name,
                     existingRegistryCount: this._regNameList.length - 1
@@ -34000,46 +34550,32 @@ var __webpack_exports__ = {};
             if (this._regNameList.length > 0) {
                 const removedIndex = this._regNameDropdown.value;
                 const registryName = this._regNameList[removedIndex];
+                this._jigsawService.deleteRegistryData(registryName);
                 this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawRegistryDeletionAttempted, {
                     registryName,
                     templatePoolCount: this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool]?.length || 0
                 });
                 this._regNameList.splice(removedIndex, 1);
-                this._regNameDropdown.updateEntries(this._regNameList.map(((name, index) => {
-                    const item = {
-                        label: name,
-                        value: Number(index)
-                    };
-                    return item;
-                })), 0);
+                this.updateJigsawRegistryDropdown(this._regNameList.length > 0 ? 0 : undefined);
                 if (this._regNameList.length > 0) {
                     this.initializeFromRegistry(this._regNameList[0]);
                 } else {
+                    this.setCollectionUIVisible(false);
                     this._currentRegFiles = {
                         [server_editor_private_bindings_namespaceObject.JigsawJsonType.Processor]: [],
                         [server_editor_private_bindings_namespaceObject.JigsawJsonType.Structure]: [],
                         [server_editor_private_bindings_namespaceObject.JigsawJsonType.StructureSet]: [],
                         [server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool]: []
                     };
-                    this._editingTemplatePoolDropdown.updateEntries([], -1);
                     this._generatingTemplatePoolDropdown.updateEntries([], -1);
-                    this._editingSubpane.removeSubPane(this._editingTemplatePoolSubpane);
+                    this._loadedFiles.clear();
+                    this.rebuildCollectionTree();
                 }
                 this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawRegistryDeleted, {
                     registryName,
                     templatePoolCount: this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool]?.length || 0
                 });
             }
-        }
-        handleTemplatePoolDropdownChange(newValue, oldValue) {
-            this.refreshTemplatePoolEditorSubpane(newValue, oldValue);
-            const templatePoolName = this._editingTemplatePoolDropdown.getEntryByValue(newValue)?.label ?? "";
-            const elementCount = this._loadedFile ? this._loadedFile["minecraft:template_pool"].elements.length : 0;
-            this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolSelected, {
-                templatePoolName,
-                elementCount,
-                registryName: this.currentRegistryName
-            });
         }
         handleTemplatePoolCreateRequest(templatePoolName) {
             if (templatePoolName) {
@@ -34048,11 +34584,8 @@ var __webpack_exports__ = {};
                     registryName: this.currentRegistryName,
                     existingPoolCount: this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool]?.length || 0
                 });
-                if (this._fileChanged && this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].length > 0) {
-                    const currentFileName = this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "";
-                    if (currentFileName) {
-                        this._updateFile(currentFileName);
-                    }
+                if (this._fileChanged) {
+                    this._updateAllFiles();
                 }
                 const tempPool = {
                     format_version: "1.21.20",
@@ -34067,6 +34600,7 @@ var __webpack_exports__ = {};
                     fileName: templatePoolName,
                     fileJson: JSON.stringify(tempPool)
                 });
+                this._loadedFiles.set(templatePoolName, tempPool);
                 const jigsawFileNameDropdownItems = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].map(((name, index) => {
                     const file = JSON.parse(name.fileJson);
                     const item = {
@@ -34075,10 +34609,9 @@ var __webpack_exports__ = {};
                     };
                     return item;
                 }));
-                const newTemplatePoolIndex = jigsawFileNameDropdownItems.length - 1;
-                this._editingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, newTemplatePoolIndex);
-                this._generatingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, newTemplatePoolIndex);
-                this.refreshTemplatePoolEditorSubpane(newTemplatePoolIndex, undefined);
+                this._saveRegistryData(false);
+                this._generatingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, jigsawFileNameDropdownItems.length - 1);
+                this.addPoolFolderToTree(templatePoolName, tempPool);
                 this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolCreated, {
                     templatePoolName,
                     registryName: this.currentRegistryName,
@@ -34086,40 +34619,42 @@ var __webpack_exports__ = {};
                 });
             }
         }
-        handleTemplatePoolDeleteRequest() {
-            if (this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].length > 0) {
-                const removedIndex = this._editingTemplatePoolDropdown.value;
-                const templatePoolName = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool][removedIndex]?.fileName || "";
-                const elementCount = this._loadedFile ? this._loadedFile["minecraft:template_pool"].elements.length : 0;
-                this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolDeletionAttempted, {
-                    templatePoolName,
-                    registryName: this.currentRegistryName,
-                    elementCount
-                });
-                this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].splice(removedIndex, 1);
-                const jigsawFileNameDropdownItems = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].map(((name, index) => {
-                    const file = JSON.parse(name.fileJson);
-                    const item = {
-                        label: file["minecraft:template_pool"].description.identifier,
-                        value: Number(index)
-                    };
-                    return item;
-                }));
-                this._editingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, 0);
-                this._generatingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, 0);
-                this.refreshTemplatePoolEditorSubpane(0, undefined);
-                this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolDeleted, {
-                    templatePoolName,
-                    registryName: this.currentRegistryName,
-                    elementCount
-                });
+        handleTemplatePoolDeleteRequest(poolName) {
+            const poolIndex = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].findIndex((item => item.fileName === poolName));
+            if (poolIndex === -1) {
+                return;
             }
+            const loadedFile = this._loadedFiles.get(poolName);
+            const elementCount = loadedFile ? loadedFile["minecraft:template_pool"].elements.length : 0;
+            this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolDeletionAttempted, {
+                templatePoolName: poolName,
+                registryName: this.currentRegistryName,
+                elementCount
+            });
+            this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].splice(poolIndex, 1);
+            this._loadedFiles.delete(poolName);
+            const jigsawFileNameDropdownItems = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].map(((name, index) => {
+                const file = JSON.parse(name.fileJson);
+                const item = {
+                    label: file["minecraft:template_pool"].description.identifier,
+                    value: Number(index)
+                };
+                return item;
+            }));
+            this._generatingTemplatePoolDropdown.updateEntries(jigsawFileNameDropdownItems, 0);
+            this._poolFolders.delete(poolName);
+            this._saveRegistryData(true);
+            this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolDeleted, {
+                templatePoolName: poolName,
+                registryName: this.currentRegistryName,
+                elementCount
+            });
         }
         generateJigsaw() {
             const startTime = Date.now();
             if (!this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool] || this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].length === 0) {
-                this._uiSession.log.error("Cannot generate jigsaw. The registry is empty. Please create at least one Jigsaw Pool first.", {
-                    channelMask: server_editor_namespaceObject.LogChannel.Toast
+                this._uiSession.log.warning("resourcePack.editor.jigsaw.pane.generate.warning.noTemplatePools", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
                 });
                 this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawGenerationFailed, {
                     registryName: this.currentRegistryName,
@@ -34129,8 +34664,22 @@ var __webpack_exports__ = {};
                 });
                 return;
             }
+            const allPoolsEmpty = Array.from(this._loadedFiles.values()).every((file => file["minecraft:template_pool"].elements.length === 0));
+            if (allPoolsEmpty) {
+                this._uiSession.log.warning("resourcePack.editor.jigsaw.pane.generate.warning.allPoolsEmpty", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
+                this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawGenerationFailed, {
+                    registryName: this.currentRegistryName,
+                    templatePoolName: "",
+                    failureReason: "invalid_pool",
+                    errorMessage: "All template pools are empty - no elements in any pool"
+                });
+                return;
+            }
             const templatePoolName = this._generatingTemplatePoolDropdown.getEntryByValue(this._generatingTemplatePoolDropdown.value)?.label ?? "";
-            const elementCount = this._loadedFile ? this._loadedFile["minecraft:template_pool"].elements.length : 0;
+            const loadedFile = this._loadedFiles.get(templatePoolName);
+            const elementCount = loadedFile ? loadedFile["minecraft:template_pool"].elements.length : 0;
             if (!templatePoolName) {
                 this._uiSession.log.error("Cannot generate jigsaw. No Jigsaw Pool selected.", {
                     channelMask: server_editor_namespaceObject.LogChannel.Toast
@@ -34143,6 +34692,22 @@ var __webpack_exports__ = {};
                 });
                 return;
             }
+            if (loadedFile) {
+                const elements = loadedFile["minecraft:template_pool"].elements;
+                const allEmpty = elements.length > 0 && elements.every((element => element.element?.element_type === "minecraft:empty_pool_element"));
+                if (allEmpty) {
+                    this._uiSession.log.warning("resourcePack.editor.jigsaw.pane.generate.warning.startingPoolAllEmpty", {
+                        channelMask: server_editor_namespaceObject.LogChannel.All
+                    });
+                    this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawGenerationFailed, {
+                        registryName: this.currentRegistryName,
+                        templatePoolName,
+                        failureReason: "invalid_pool",
+                        errorMessage: "All elements in starting pool are empty pool elements"
+                    });
+                    return;
+                }
+            }
             if (!this._props.lockJigsawSeed.value) {
                 const x = Math.random() * 64e3 - 32e3;
                 const y = Math.random() * 64e3 - 32e3;
@@ -34154,8 +34719,7 @@ var __webpack_exports__ = {};
                 };
             }
             if (this._fileChanged) {
-                const updatedFileName = this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "";
-                this._updateFile(updatedFileName);
+                this._updateAllFiles();
             }
             const templatePoolNames = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].map((file => file.fileName));
             const hasDuplicates = templatePoolNames.some(((name, index) => templatePoolNames.indexOf(name) !== index));
@@ -34183,20 +34747,7 @@ var __webpack_exports__ = {};
                 return;
             }
             this._fileChanged = false;
-            const empty = [];
-            this._jigsawService.setRegistryData(this.currentRegistryName, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Processor] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Structure] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.StructureSet] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool] ?? empty).then((regList => {
-                this._regNameList = regList;
-                this.updateJigsawRegistryDropdown();
-            })).catch((error => {
-                this._uiSession.log.error(`Export error : ${error}`);
-                this._regNameList = [];
-                this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawGenerationFailed, {
-                    registryName: this.currentRegistryName,
-                    templatePoolName,
-                    failureReason: "system_error",
-                    errorMessage: error
-                });
-            }));
+            this._saveRegistryData(false);
             this._jigsawService.generateJigsaw(this.currentRegistryName, templatePoolName.replace("-", ":"), this._props.startingTarget.value, this._seed, this._props.jigsawGenerationDepth.value, this._props.jigsawHorizontalSize.value, !this._props.bypassValidation.value, this._uiSession.extensionContext.clipboardManager.clipboard).then((() => {
                 const executionTime = Date.now() - startTime;
                 this._uiSession.log.info(`Successfully generated jigsaw and wrote to clipboard.`);
@@ -34220,19 +34771,27 @@ var __webpack_exports__ = {};
                 });
             }));
         }
-        _updateFile(targetFile) {
-            const updatedFileIndex = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].findIndex((item => item.fileName === targetFile));
-            this._loadedFile["minecraft:template_pool"].elements.forEach(((element, index) => {
-                if (element.element.location === "minecraft:empty_pool_element" && element.element.location !== undefined) {
-                    const emptyElement = {
-                        element_type: "minecraft:empty_pool_element"
-                    };
-                    this._loadedFile["minecraft:template_pool"].elements[index].element = emptyElement;
+        _updateAllFiles() {
+            this._loadedFiles.forEach(((loadedFile, poolName) => {
+                loadedFile["minecraft:template_pool"].elements.forEach(((element, index) => {
+                    if (element.element.location === "minecraft:empty_pool_element" && element.element.location !== undefined) {
+                        const emptyElement = {
+                            element_type: "minecraft:empty_pool_element"
+                        };
+                        loadedFile["minecraft:template_pool"].elements[index].element = emptyElement;
+                    }
+                }));
+                const updatedFileIndex = this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool].findIndex((item => item.fileName === poolName));
+                if (updatedFileIndex !== -1) {
+                    this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool][updatedFileIndex].fileJson = JSON.stringify(loadedFile);
                 }
             }));
-            this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool][updatedFileIndex].fileJson = JSON.stringify(this._loadedFile);
         }
-        handleAddNewTemplatePoolElement() {
+        handleAddNewTemplatePoolElement(poolName) {
+            const loadedFile = this._loadedFiles.get(poolName);
+            if (!loadedFile) {
+                return;
+            }
             const emptyElement = {
                 element_type: "minecraft:empty_pool_element"
             };
@@ -34240,82 +34799,106 @@ var __webpack_exports__ = {};
                 element: emptyElement,
                 weight: JigsawModeBehavior.MINIMUM_WEIGHT
             };
-            const size = this._loadedFile["minecraft:template_pool"].elements.push(element);
-            this._addTemplatePoolElementSection(element, size - 1);
-            this._editingTemplatePoolSubpane.addDivider();
+            const size = loadedFile["minecraft:template_pool"].elements.push(element);
             this._fileChanged = true;
+            const folder = this._poolFolders.get(poolName);
+            if (folder) {
+                this.addPieceEntryToFolder(folder, poolName, element, size - 1);
+            }
+            this._saveRegistryData(true);
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolElementAdded, {
-                templatePoolName: this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "",
+                templatePoolName: poolName,
                 structureLocation: "",
                 weight: 1,
                 totalElements: size,
                 registryName: this.currentRegistryName
             });
         }
-        handleTemplatePoolElementStructureChange(index, newValue) {
-            const structureName = this._structuresIds[newValue];
-            if (structureName === "minecraft:empty_pool_element") {
+        handleTemplatePoolElementStructureChangeByPoolName(poolName, index, newValue) {
+            const loadedFile = this._loadedFiles.get(poolName);
+            if (!loadedFile) {
+                return;
+            }
+            const structureId = newValue;
+            if (structureId === "minecraft:empty_pool_element") {
                 const emptyElement = {
                     element_type: "minecraft:empty_pool_element"
                 };
-                this._loadedFile["minecraft:template_pool"].elements[index].element = emptyElement;
+                loadedFile["minecraft:template_pool"].elements[index].element = emptyElement;
             } else {
                 const singleElement = {
-                    location: structureName,
+                    location: structureId,
                     element_type: "minecraft:single_pool_element"
                 };
-                this._loadedFile["minecraft:template_pool"].elements[index].element = singleElement;
+                loadedFile["minecraft:template_pool"].elements[index].element = singleElement;
             }
             this._fileChanged = true;
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolElementModified, {
-                templatePoolName: this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "",
+                templatePoolName: poolName,
                 changeType: "structure_changed",
-                newStructureLocation: this._structuresIds[newValue],
+                newStructureLocation: structureId,
                 registryName: this.currentRegistryName
             });
         }
-        handleTemplatePoolElementWeightChange(index, newValue) {
-            this._loadedFile["minecraft:template_pool"].elements[index].weight = newValue;
+        handleTemplatePoolElementWeightChangeByPoolName(poolName, index, newValue) {
+            const loadedFile = this._loadedFiles.get(poolName);
+            if (!loadedFile) {
+                return;
+            }
+            loadedFile["minecraft:template_pool"].elements[index].weight = newValue;
             this._fileChanged = true;
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolElementModified, {
-                templatePoolName: this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "",
+                templatePoolName: poolName,
                 changeType: "weight_changed",
                 newWeight: newValue,
                 registryName: this.currentRegistryName
             });
         }
-        handleDeleteTemplatePoolElementRequest(index) {
-            const elementToDelete = this._loadedFile["minecraft:template_pool"].elements[index];
+        handleDeleteTemplatePoolElementRequest(poolName, index) {
+            const loadedFile = this._loadedFiles.get(poolName);
+            if (!loadedFile) {
+                return;
+            }
+            const elementToDelete = loadedFile["minecraft:template_pool"].elements[index];
             const structureLocation = elementToDelete.element?.location || elementToDelete.element?.element_type || "";
             this.telemetryManager.fireTelemetryEvent(JigsawTelemetry.JigsawTemplatePoolElementDeleted, {
-                templatePoolName: this._editingTemplatePoolDropdown.getEntryByValue(this._editingTemplatePoolDropdown.value)?.label ?? "",
+                templatePoolName: poolName,
                 structureLocation,
                 weight: elementToDelete.weight || JigsawModeBehavior.MINIMUM_WEIGHT,
-                remainingElements: this._loadedFile["minecraft:template_pool"].elements.length - 1,
+                remainingElements: loadedFile["minecraft:template_pool"].elements.length - 1,
                 registryName: this.currentRegistryName
             });
-            this._loadedFile["minecraft:template_pool"].elements.splice(index, 1);
+            loadedFile["minecraft:template_pool"].elements.splice(index, 1);
             this._fileChanged = true;
-            this.refreshTemplatePoolEditorSubpane(this._editingTemplatePoolDropdown.value, this._editingTemplatePoolDropdown.value);
+            this._saveRegistryData(true);
         }
         refreshStructureIds() {
             const structs = this._uiSession.extensionContext.structureManager.searchStructures({
                 sources: [ server_editor_namespaceObject.StructureSource.EditorProject, server_editor_namespaceObject.StructureSource.BehaviorPack ]
             });
             const uniqueStructs = [ ...new Set(structs) ];
-            this._structuresIds = uniqueStructs.map((structure => structure.structureFullName.replace(":", "/")));
-            this._structuresIds.unshift("minecraft:empty_pool_element");
+            const structureEntries = uniqueStructs.map((structure => ({
+                structureId: structure.structureFullName.replace(":", "/"),
+                structureDisplayName: structure.displayName + " || " + structure.structureFullName.replace(":", "/")
+            })));
+            structureEntries.sort(((a, b) => a.structureDisplayName.localeCompare(b.structureDisplayName)));
+            this._structuresIds = [ {
+                structureId: "minecraft:empty_pool_element",
+                structureDisplayName: "resourcePack.editor.jigsaw.pane.emptyPoolElement"
+            }, ...structureEntries ];
         }
         _setupTemplateEditingEnvironment() {
             this._inVoidWorld = true;
             this._uiSession.toolRail.setSelectedToolId(undefined);
             this._toolChangedEventToken = this._uiSession.toolRail.onSelectedToolChanged.subscribe((evt => {
+                this._saveRegistryData(true);
                 if (evt.tool !== undefined && this._inVoidWorld) {
                     this._leaveVoidWorld();
                 }
             }));
             if (this._modeChangeEventSubscriptionHandle === undefined) {
                 this._modeChangeEventSubscriptionHandle = this._uiSession.extensionContext.afterEvents.modeChange.subscribe((evt => {
+                    this._saveRegistryData(true);
                     if (evt.mode !== server_editor_namespaceObject.EditorMode.Tool && this._inVoidWorld) {
                         this._leaveVoidWorld();
                     }
@@ -34448,6 +35031,21 @@ var __webpack_exports__ = {};
             });
             this._generatingJigsawModal.contentPane.addProgressIndicator();
         }
+        _saveRegistryData(updateFilePriorToSaving) {
+            if (updateFilePriorToSaving) {
+                this._updateAllFiles();
+            }
+            if (this.currentRegistryName && this.currentRegistryName !== "") {
+                const empty = [];
+                this._jigsawService.setRegistryData(this.currentRegistryName, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Processor] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.Structure] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.StructureSet] ?? empty, this._currentRegFiles[server_editor_private_bindings_namespaceObject.JigsawJsonType.TemplatePool] ?? empty).then((regList => {
+                    this._regNameList = regList;
+                    this.updateJigsawRegistryDropdown(this._regNameDropdown.value);
+                })).catch((error => {
+                    this._uiSession.log.error(`Export error : ${error}`);
+                    this._regNameList = [];
+                }));
+            }
+        }
     }
     JigsawModeBehavior.BEHAVIOR_NAME = "JigsawMode";
     JigsawModeBehavior.CURSOR_STATE_ID = "editor:jigsaw";
@@ -34458,6 +35056,8 @@ var __webpack_exports__ = {};
     JigsawModeBehavior.MAXIMUM_DEPTH = 20;
     JigsawModeBehavior.MINIMUM_HORIZONTAL_SIZE = 16;
     JigsawModeBehavior.MAXIMUM_HORIZONTAL_SIZE = 1024;
+    JigsawModeBehavior.NEW_COLLECTION_SENTINEL_VALUE = -1;
+    JigsawModeBehavior.NO_SELECTION_SENTINEL_VALUE = -2;
     class PrefabTemplateManagerBehavior {
         get prefabManager() {
             return this._parent.prefabManager;
@@ -37027,7 +37627,7 @@ var __webpack_exports__ = {};
                         }
                     }
                 },
-                layout: {
+                slotConfig: {
                     height: 4.4,
                     clickable: true,
                     entryLayout: [ {
@@ -37692,6 +38292,12 @@ var __webpack_exports__ = {};
                     if (this._calcPromise === undefined) {
                         return;
                     }
+                    if (this._blockLimitReached && !this._props.ignoreBlockLimit.value) {
+                        this._uiSession.log.warning("Unable to change water level due to number of blocks that need updated.", {
+                            channelMask: server_editor_namespaceObject.LogChannel.All
+                        });
+                        return;
+                    }
                     this._calcPromise.then((async () => {
                         await new Promise(((resolve, reject) => {
                             if (this._commitFloodHandle) {
@@ -37708,7 +38314,7 @@ var __webpack_exports__ = {};
             pane.addButton(applyFloodAction, {
                 title: "resourcePack.editor.toolRail.floodTool.pane.applyFlood.title"
             });
-            uiSession.inputManager.registerKeyBinding(server_editor_namespaceObject.EditorInputContext.GlobalToolMode, applyFloodAction, {
+            this._tool.registerKeyBinding(applyFloodAction, {
                 key: server_editor_namespaceObject.KeyboardKey.KEY_F,
                 modifier: server_editor_namespaceObject.InputModifier.Control
             }, {
@@ -38217,7 +38823,7 @@ var __webpack_exports__ = {};
         get propertyPane() {
             return this._uiPropertyPane;
         }
-        constructor(group, _hasParentPane, _rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback, _helpString) {
+        constructor(group, _hasParentPane, _rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback, _helpString, _itemsToRemove = []) {
             super();
             this._group = group;
             this._helpString = _helpString;
@@ -38242,6 +38848,12 @@ var __webpack_exports__ = {};
                 this.group.dataItems.sort(((a, b) => a._displayName.localeCompare(b._displayName)));
             }
             for (const item of this.group.dataItems) {
+                if (_itemsToRemove.includes(item._displayName)) {
+                    continue;
+                }
+                if (item._prettyEnums !== undefined) {
+                    item._prettyEnums = item._prettyEnums.filter((pe => !_itemsToRemove.includes(pe)));
+                }
                 const localizedTitle = `${item._displayName}`;
                 const updateOriginalJSONData = newValue => {
                     const observableControlType = item._observableControlType;
@@ -38264,6 +38876,9 @@ var __webpack_exports__ = {};
                             propItemOptions.min = item._min;
                             propItemOptions.max = item._max;
                             propItemOptions.variant = showSlider ? server_editor_namespaceObject.NumberPropertyItemVariant.InputFieldAndSlider : server_editor_namespaceObject.NumberPropertyItemVariant.InputField;
+                        }
+                        if (item._originalType === OpNodeSourceType.INTEGER) {
+                            propItemOptions.isInteger = true;
                         }
                         if (item._readonly) {
                             propItemOptions.enable = false;
@@ -38294,9 +38909,6 @@ var __webpack_exports__ = {};
                         };
                         if (item._readonly) {
                             propItemOptions.enable = false;
-                        }
-                        if (item._displayName === "format_version") {
-                            break;
                         }
                         item._setOriginalJSONData = (observableTypes, propertyPath, newValue) => {
                             observableTypes[propertyPath].set(newValue);
@@ -38769,7 +39381,7 @@ var __webpack_exports__ = {};
         get tags() {
             return this._tags;
         }
-        createPropertyPane(_rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback) {
+        createPropertyPane(_rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback, _itemsToRemove) {
             if (this._parentGroup) {
                 if (this._parentGroup.propertyPane) {
                     _rootPane = this._parentGroup.propertyPane;
@@ -38781,7 +39393,7 @@ var __webpack_exports__ = {};
             if (this._UIControl) {
                 throw new Error("Property pane already created");
             }
-            this._UIControl = new DataItemGroupUIControlPropertyPane(this, this._parentGroup !== undefined, _rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback, this._helpString);
+            this._UIControl = new DataItemGroupUIControlPropertyPane(this, this._parentGroup !== undefined, _rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback, this._helpString, _itemsToRemove);
         }
         createColorTimeline(_rootPane, _observables, _actualData, _schemaInterface, _dataItemChangedCallback) {
             if (this._parentGroup) {
@@ -39198,7 +39810,7 @@ var __webpack_exports__ = {};
                 }
             }
         }
-        constructUIComponents(_rootPane, _schemaInterface) {
+        constructUIComponents(_rootPane, _schemaInterface, _itemsToRemove = []) {
             if (this._currentData === undefined) {
                 throw new Error("No data object to build UI components from");
             }
@@ -39210,7 +39822,7 @@ var __webpack_exports__ = {};
                   case DataItemGroupType.PropertyPane:
                     group.createPropertyPane(_rootPane, this._editableProperties, this._currentData, _schemaInterface, (() => {
                         this._dirty = true;
-                    }));
+                    }), _itemsToRemove);
                     break;
 
                   case DataItemGroupType.ColorTimeline:
@@ -39250,7 +39862,7 @@ var __webpack_exports__ = {};
         DeferredLightingTelemetry["ErrorDataTransfer"] = "ErrorDataTransfer";
     })(DeferredLightingTelemetry || (DeferredLightingTelemetry = {}));
     const USE_MCTOOLS_STAGING = false;
-    const GLOBAL_ACCESSOR_CONFIGURATIONS = [ "deferred_lighting::shadows" ];
+    const GLOBAL_ACCESSOR_CONFIGURATIONS = [ "deferred_lighting::shadows", "deferred_lighting::local_lights" ];
     class VibrantVisualsPerBiomeBehavior {
         _logInfo(message) {
             this._session.log.info(message);
@@ -39272,6 +39884,7 @@ var __webpack_exports__ = {};
             this._newConfigNewNamespace = (0, server_editor_namespaceObject.makeObservable)("");
             this._newConfigIdentifier = (0, server_editor_namespaceObject.makeObservable)("");
             this._importFieldText = (0, server_editor_namespaceObject.makeObservable)("");
+            this._isDeferredExperimentEnabled = false;
             this._targetBiomeDropdownList = [];
             this._targetBiomeDropdownIndex = (0, server_editor_namespaceObject.makeObservable)(-1);
             this._targetBiomesByCurrentLocation = (0, server_editor_namespaceObject.makeObservable)(false);
@@ -39290,6 +39903,7 @@ var __webpack_exports__ = {};
                 this._uiComponentMap?.addDataItem(_path, _key, _type, _data, _properties);
             };
             this._transferManager = server_editor_private_bindings_namespaceObject.editorInternal.getPlayerServices(this._session.extensionContext.player).dataTransfer;
+            this._isDeferredExperimentEnabled = this._transferManager.isDeferredExperimentEnabled;
             this._accessorList = this._transferManager.getRegisteredAccessors();
             this._rootPane = this._session.createPropertyPane({
                 title: "resourcePack.editor.agfx.pane.title",
@@ -39819,7 +40433,7 @@ var __webpack_exports__ = {};
         async _generateResourcePackPayload(transferManager, biomeConfigData) {
             const rp = new Map;
             const prefix = "/resource_packs/samp_dlstarter/";
-            const filepath_map = new Map([ [ "deferred_lighting::water_parameters", prefix + "water/water.json" ], [ "deferred_lighting::lighting_group", prefix + "lighting/global.json" ], [ "deferred_lighting::atmospheric_scattering", prefix + "atmospherics/atmospherics.json" ], [ "deferred_lighting::color_grading_parameters", prefix + "color_grading/color_grading.json" ], [ "deferred_lighting::point_lights", prefix + "point_lights/global.json" ], [ "deferred_lighting::shadows", prefix + "shadows/global.json" ], [ "deferred_lighting::cubemap", prefix + "cubemaps/cubemap.json" ] ]);
+            const filepath_map = new Map([ [ "deferred_lighting::water_parameters", prefix + "water/water.json" ], [ "deferred_lighting::lighting_group", prefix + "lighting/global.json" ], [ "deferred_lighting::atmospheric_scattering", prefix + "atmospherics/atmospherics.json" ], [ "deferred_lighting::color_grading_parameters", prefix + "color_grading/color_grading.json" ], [ "deferred_lighting::local_lights", prefix + "local_lighting/local_lighting.json" ], [ "deferred_lighting::shadows", prefix + "shadows/global.json" ], [ "deferred_lighting::cubemap", prefix + "cubemaps/cubemap.json" ] ]);
             const accessorList = transferManager.getRegisteredAccessors();
             for (const accessor of accessorList) {
                 const accessorString = accessor.uniqueId.replace("deferred_lighting::", "");
@@ -40032,7 +40646,11 @@ var __webpack_exports__ = {};
                     title: "resourcePack.editor.agfx.pane.settings.title",
                     hasExpander: false
                 });
-                this._uiComponentMap?.constructUIComponents(this._settingsPane, this._schemaInterface);
+                const itemsToRemove = [ "format_version", "Format Version" ];
+                if (!this._isDeferredExperimentEnabled) {
+                    itemsToRemove.push("Point Light");
+                }
+                this._uiComponentMap?.constructUIComponents(this._settingsPane, this._schemaInterface, itemsToRemove);
                 this._settingsPane.addDivider();
             } catch (e) {
                 this._schemaInterface.error(`Failed to build UI components - ${VibrantVisualsBiome_stringFromException(e)}`);
@@ -40157,6 +40775,135 @@ var __webpack_exports__ = {};
             }
         }
     }
+    function catmullRom(p0, p1, p2, p3, t) {
+        const t2 = t * t;
+        const t3 = t2 * t;
+        return {
+            x: .5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+            y: .5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+            z: .5 * (2 * p1.z + (-p0.z + p2.z) * t + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3)
+        };
+    }
+    function bounceOut(t) {
+        const bounceScalar = 7.5625;
+        const bounceDivisor = 2.75;
+        if (t < 1 / bounceDivisor) {
+            return bounceScalar * t * t;
+        } else if (t < 2 / bounceDivisor) {
+            return bounceScalar * (t -= 1.5 / bounceDivisor) * t + .75;
+        } else if (t < 2.5 / bounceDivisor) {
+            return bounceScalar * (t -= 2.25 / bounceDivisor) * t + .9375;
+        } else {
+            return bounceScalar * (t -= 2.625 / bounceDivisor) * t + .984375;
+        }
+    }
+    function applyEasing(t, easingType) {
+        const overshootStrength = 1.70158;
+        const backInOutOvershoot = overshootStrength * 1.525;
+        const backOvershoot = overshootStrength + 1;
+        const elasticPeriod = 2 * Math.PI / 3;
+        const elasticInOutPeriod = 2 * Math.PI / 4.5;
+        switch (easingType) {
+          case server_namespaceObject.EasingType.Linear:
+            return t;
+
+          case server_namespaceObject.EasingType.InQuad:
+            return t * t;
+
+          case server_namespaceObject.EasingType.OutQuad:
+            return 1 - (1 - t) * (1 - t);
+
+          case server_namespaceObject.EasingType.InOutQuad:
+            return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+          case server_namespaceObject.EasingType.InCubic:
+            return t * t * t;
+
+          case server_namespaceObject.EasingType.OutCubic:
+            return 1 - Math.pow(1 - t, 3);
+
+          case server_namespaceObject.EasingType.InOutCubic:
+            return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+          case server_namespaceObject.EasingType.InQuart:
+            return t * t * t * t;
+
+          case server_namespaceObject.EasingType.OutQuart:
+            return 1 - Math.pow(1 - t, 4);
+
+          case server_namespaceObject.EasingType.InOutQuart:
+            return t < .5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+
+          case server_namespaceObject.EasingType.InQuint:
+            return t * t * t * t * t;
+
+          case server_namespaceObject.EasingType.OutQuint:
+            return 1 - Math.pow(1 - t, 5);
+
+          case server_namespaceObject.EasingType.InOutQuint:
+            return t < .5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+
+          case server_namespaceObject.EasingType.InSine:
+            return 1 - Math.cos(t * Math.PI / 2);
+
+          case server_namespaceObject.EasingType.OutSine:
+            return Math.sin(t * Math.PI / 2);
+
+          case server_namespaceObject.EasingType.InOutSine:
+            return -(Math.cos(Math.PI * t) - 1) / 2;
+
+          case server_namespaceObject.EasingType.InExpo:
+            return t === 0 ? 0 : Math.pow(2, 10 * t - 10);
+
+          case server_namespaceObject.EasingType.OutExpo:
+            return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+
+          case server_namespaceObject.EasingType.InOutExpo:
+            return t === 0 ? 0 : t === 1 ? 1 : t < .5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
+
+          case server_namespaceObject.EasingType.InCirc:
+            return 1 - Math.sqrt(1 - t * t);
+
+          case server_namespaceObject.EasingType.OutCirc:
+            return Math.sqrt(1 - Math.pow(t - 1, 2));
+
+          case server_namespaceObject.EasingType.InOutCirc:
+            return t < .5 ? (1 - Math.sqrt(1 - Math.pow(2 * t, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2;
+
+          case server_namespaceObject.EasingType.InBack:
+            return backOvershoot * t * t * t - overshootStrength * t * t;
+
+          case server_namespaceObject.EasingType.OutBack:
+            return 1 + backOvershoot * Math.pow(t - 1, 3) + overshootStrength * Math.pow(t - 1, 2);
+
+          case server_namespaceObject.EasingType.InOutBack:
+            return t < .5 ? Math.pow(2 * t, 2) * ((backInOutOvershoot + 1) * 2 * t - backInOutOvershoot) / 2 : (Math.pow(2 * t - 2, 2) * ((backInOutOvershoot + 1) * (t * 2 - 2) + backInOutOvershoot) + 2) / 2;
+
+          case server_namespaceObject.EasingType.InElastic:
+            return t === 0 ? 0 : t === 1 ? 1 : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * elasticPeriod);
+
+          case server_namespaceObject.EasingType.OutElastic:
+            return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - .75) * elasticPeriod) + 1;
+
+          case server_namespaceObject.EasingType.InOutElastic:
+            return t === 0 ? 0 : t === 1 ? 1 : t < .5 ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * elasticInOutPeriod)) / 2 : Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * elasticInOutPeriod) / 2 + 1;
+
+          case server_namespaceObject.EasingType.InBounce:
+            return 1 - bounceOut(1 - t);
+
+          case server_namespaceObject.EasingType.OutBounce:
+            return bounceOut(t);
+
+          case server_namespaceObject.EasingType.InOutBounce:
+            return t < .5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2;
+
+          case server_namespaceObject.EasingType.Spring:
+            return 1 - Math.cos(t * Math.PI * 4.5) * Math.exp(-t * 6);
+
+          default:
+            return t;
+        }
+    }
     const MIN_TIME_DIFFERENCE_SECONDS = .05;
     const STORED_CINEMATIC_PLAYER_PROPERTY_NAME = "cinematic:storedControlPoints";
     const WIDGET_SHOW_DISTANCE = 2;
@@ -40171,6 +40918,11 @@ var __webpack_exports__ = {};
         QuickActionMode[QuickActionMode["SelectAll"] = 1] = "SelectAll";
         QuickActionMode[QuickActionMode["DeleteSelected"] = 2] = "DeleteSelected";
     })(CinematicTool_QuickActionMode || (CinematicTool_QuickActionMode = {}));
+    var CinematicTelemetry;
+    (function(CinematicTelemetry) {
+        CinematicTelemetry["ExportJSON"] = "ExportJSON";
+        CinematicTelemetry["ImportJSON"] = "ImportJSON";
+    })(CinematicTelemetry || (CinematicTelemetry = {}));
     const SPLINE_TYPE_CONFIGS = {
         [SplineTypeDropdownSelection.CatmullRom]: {
             minPoints: 4,
@@ -40193,16 +40945,27 @@ var __webpack_exports__ = {};
             this.selectedControlPointIndex = -1;
             this.nextControlPointId = 1;
             this.quickActionMode = (0, server_editor_namespaceObject.makeObservable)(CinematicTool_QuickActionMode.None);
+            this.importJsonText = (0, server_editor_namespaceObject.makeObservable)("");
             this.totalDuration = (0, server_editor_namespaceObject.makeObservable)(10);
             this.selectedSplineTypeIndex = (0, server_editor_namespaceObject.makeObservable)(SplineTypeDropdownSelection.CatmullRom);
             this.isAnimating = false;
             this.SPLINE_UPDATE_DELAY_MS = 100;
+            this.speedDotWidgets = [];
+            this.showSpeedDots = (0, server_editor_namespaceObject.makeObservable)(false);
+            this.SPEED_DOT_INTERVAL_SECONDS = .1;
+            this.SPEED_DOT_RADIUS = .08;
             uiSession.log.debug(`Initializing ${CinematicToolBehavior.BEHAVIOR_NAME}`);
+            this.telemetryManager = new TelemetryManager(uiSession.extensionContext.player, TelemetrySource.Cinematic);
             this.widgetGroup = uiSession.extensionContext.widgetManager.createGroup({
                 groupSelectionMode: server_editor_namespaceObject.WidgetGroupSelectionMode.Multiple,
                 visible: false
             });
             this.loadControlPointsFromWorld();
+            this.transactionHandler = (0, server_editor_namespaceObject.registerUserDefinedTransactionHandler)(uiSession.extensionContext.transactionManager, (payload => {
+                this._restoreFromSnapshot(JSON.stringify(payload.beforeState));
+            }), (payload => {
+                this._restoreFromSnapshot(JSON.stringify(payload.afterState));
+            }));
             this.pane = this._createPropertyPane();
             this.tool = this._addTool(uiSession);
             this.tool.bindPropertyPane(this.pane);
@@ -40251,6 +41014,7 @@ var __webpack_exports__ = {};
                 if (data.controlPoints && Array.isArray(data.controlPoints)) {
                     this.controlPoints = data.controlPoints.map((stored => ({
                         id: stored.id,
+                        order: stored.order,
                         name: stored.name,
                         position: stored.position,
                         viewDirection: stored.viewDirection,
@@ -40262,11 +41026,8 @@ var __webpack_exports__ = {};
                     this.totalDuration.set(data.totalDuration || 10);
                     this.selectedSplineTypeIndex.set(data.splineType || SplineTypeDropdownSelection.CatmullRom);
                     if (this.controlPoints.length > 0) {
-                        const maxId = Math.max(...this.controlPoints.map((cp => {
-                            const match = cp.id.match(/cp_(\d+)/);
-                            return match ? parseInt(match[1]) : 0;
-                        })));
-                        this.nextControlPointId = maxId + 1;
+                        const maxOrder = Math.max(...this.controlPoints.map((cp => cp.order)));
+                        this.nextControlPointId = maxOrder + 1;
                     }
                 }
             } catch (error) {
@@ -40277,6 +41038,7 @@ var __webpack_exports__ = {};
             const data = {
                 controlPoints: this.controlPoints.map((cp => ({
                     id: cp.id,
+                    order: cp.order,
                     name: cp.name,
                     position: cp.position,
                     viewDirection: cp.viewDirection,
@@ -40287,8 +41049,91 @@ var __webpack_exports__ = {};
                 totalDuration: this.totalDuration.value,
                 splineType: this.selectedSplineTypeIndex.value
             };
+            const jsonStr = JSON.stringify(data);
             const player = this.uiSession.extensionContext.player;
-            player.setDynamicProperty(STORED_CINEMATIC_PLAYER_PROPERTY_NAME, JSON.stringify(data));
+            player.setDynamicProperty(STORED_CINEMATIC_PLAYER_PROPERTY_NAME, jsonStr);
+        }
+        _getCurrentStateSnapshot() {
+            return {
+                controlPoints: this.controlPoints.map((cp => ({
+                    id: cp.id,
+                    order: cp.order,
+                    name: cp.name,
+                    position: cp.position,
+                    viewDirection: cp.viewDirection,
+                    playerRotation: cp.playerRotation,
+                    easingType: cp.easingType,
+                    timeSeconds: cp.timeSeconds
+                }))),
+                totalDuration: this.totalDuration.value,
+                splineType: this.selectedSplineTypeIndex.value
+            };
+        }
+        _beginUndoTransaction(name) {
+            this._undoBeforeState = this._getCurrentStateSnapshot();
+            this.uiSession.extensionContext.transactionManager.openTransaction(name);
+        }
+        _commitUndoTransaction() {
+            if (!this._undoBeforeState || !this.transactionHandler) {
+                return;
+            }
+            const afterState = this._getCurrentStateSnapshot();
+            this.transactionHandler.addUserDefinedOperation({
+                beforeState: this._undoBeforeState,
+                afterState
+            }, "Cinematic Tool");
+            this.uiSession.extensionContext.transactionManager.commitOpenTransaction();
+            this._undoBeforeState = undefined;
+        }
+        _commitPropertyChange(name, beforeState) {
+            if (!this.transactionHandler) {
+                return;
+            }
+            const afterState = this._getCurrentStateSnapshot();
+            this.uiSession.extensionContext.transactionManager.openTransaction(name);
+            this.transactionHandler.addUserDefinedOperation({
+                beforeState,
+                afterState
+            }, "Cinematic Tool");
+            this.uiSession.extensionContext.transactionManager.commitOpenTransaction();
+        }
+        _restoreFromSnapshot(snapshot) {
+            const data = JSON.parse(snapshot);
+            const existingWidgets = new Map;
+            for (const cp of this.controlPoints) {
+                if (cp.widget) {
+                    existingWidgets.set(cp.id, cp.widget);
+                }
+            }
+            const restoredIds = new Set(data.controlPoints.map((s => s.id)));
+            for (const [id, widget] of existingWidgets) {
+                if (!restoredIds.has(id)) {
+                    widget.delete();
+                }
+            }
+            this.controlPoints = data.controlPoints.map((stored => ({
+                id: stored.id,
+                order: stored.order,
+                name: stored.name,
+                position: stored.position,
+                viewDirection: stored.viewDirection,
+                playerRotation: stored.playerRotation,
+                easingType: stored.easingType,
+                timeSeconds: stored.timeSeconds,
+                widget: existingWidgets.get(stored.id)
+            })));
+            this.totalDuration.set(data.totalDuration || 10);
+            this.selectedSplineTypeIndex.set(data.splineType || SplineTypeDropdownSelection.CatmullRom);
+            if (this.controlPoints.length > 0) {
+                const maxOrder = Math.max(...this.controlPoints.map((cp => cp.order)));
+                this.nextControlPointId = maxOrder + 1;
+            }
+            this.selectedControlPointIndex = -1;
+            this._updateAllWidgets();
+            this._refreshControlPointsList();
+            this._updateControlPointDetails();
+            this._updatePlayAnimationButtonState();
+            this.storeControlPointsToWorld();
         }
         _bindKeyboardShortcuts() {
             const deleteSelectedPointAction = this.uiSession.actionManager.createAction({
@@ -40381,15 +41226,39 @@ var __webpack_exports__ = {};
                 min: 1,
                 max: 300,
                 onChange: _ => {
-                    this._redistributeTimeValues();
+                    const duration = this.totalDuration.value;
+                    let clamped = false;
+                    for (const cp of this.controlPoints) {
+                        if (cp.timeSeconds > duration) {
+                            cp.timeSeconds = Math.round(duration * 100) / 100;
+                            clamped = true;
+                        }
+                    }
+                    if (clamped) {
+                        this._sortAndNormalizeControlPointTimes();
+                        this._refreshUIState();
+                    }
                     this.storeControlPointsToWorld();
                 }
+            });
+            pane.addButton(this.uiSession.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
+                onExecute: () => {
+                    this._redistributeTimeValues();
+                    this._refreshUIState();
+                    this.storeControlPointsToWorld();
+                }
+            }), {
+                title: "resourcePack.editor.CinematicTool.pane.redistributeEvenly",
+                tooltip: "resourcePack.editor.CinematicTool.pane.redistributeEvenly.tooltip",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary
             });
             this.playAnimationButton = pane.addButton(this.uiSession.actionManager.createAction({
                 actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
                 onExecute: () => this._playAnimation()
             }), {
                 title: "resourcePack.editor.CinematicTool.pane.playAnimation",
+                tooltip: "resourcePack.editor.CinematicTool.pane.playAnimation.tooltip",
                 variant: server_editor_namespaceObject.ButtonVariant.Primary,
                 visible: true,
                 enable: false
@@ -40407,8 +41276,33 @@ var __webpack_exports__ = {};
                 onExecute: () => this._exportAnimationCode()
             }), {
                 title: "resourcePack.editor.CinematicTool.pane.exportCode",
-                variant: server_editor_namespaceObject.ButtonVariant.Secondary,
+                tooltip: "resourcePack.editor.CinematicTool.pane.exportCode.tooltip",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary,
                 visible: true
+            });
+            pane.addButton(this.uiSession.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
+                onExecute: () => this._exportJSON()
+            }), {
+                title: "resourcePack.editor.CinematicTool.pane.exportJSON",
+                tooltip: "resourcePack.editor.CinematicTool.pane.exportJSON.tooltip",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary
+            });
+            pane.addButton(this.uiSession.actionManager.createAction({
+                actionType: server_editor_namespaceObject.ActionTypes.NoArgsAction,
+                onExecute: () => this._importJSON()
+            }), {
+                title: "resourcePack.editor.CinematicTool.pane.importJSON",
+                tooltip: "resourcePack.editor.CinematicTool.pane.importJSON.tooltip",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary
+            });
+            pane.addDivider();
+            pane.addBool(this.showSpeedDots, {
+                title: "resourcePack.editor.CinematicTool.pane.showSpeedDots",
+                tooltip: "resourcePack.editor.CinematicTool.pane.showSpeedDots.tooltip",
+                onChange: _ => {
+                    this._updateSpeedDots();
+                }
             });
             pane.addDivider();
             const pointDetailsPane = pane.createSubPane({
@@ -40465,6 +41359,29 @@ var __webpack_exports__ = {};
                 variant: server_editor_namespaceObject.ButtonVariant.Primary
             });
             this.singleDeleteConfirmDialog.controlPane.addButton((() => this.singleDeleteConfirmDialog?.sendDismiss()), {
+                title: "resourcePack.editor.CinematicTool.dialog.cancel",
+                variant: server_editor_namespaceObject.ButtonVariant.Secondary
+            });
+            this.importJsonDialog = this.uiSession.dialogManager.registerDialog({
+                uniqueId: "cinematic:importJSON",
+                width: 80,
+                title: "resourcePack.editor.CinematicTool.dialog.importJSON.title"
+            });
+            this.importJsonDialog.contentPane.addString(this.importJsonText, {
+                title: "resourcePack.editor.CinematicTool.dialog.importJSON.field",
+                inlineLabel: false,
+                multilineHeight: 12
+            });
+            this.importJsonDialog.controlPane.addButton((() => {
+                this._processImportJSON();
+                this.importJsonDialog?.sendDismiss();
+            }), {
+                title: "resourcePack.editor.CinematicTool.dialog.importJSON.import",
+                variant: server_editor_namespaceObject.ButtonVariant.Primary
+            });
+            this.importJsonDialog.controlPane.addButton((() => {
+                this.importJsonDialog?.sendDismiss();
+            }), {
                 title: "resourcePack.editor.CinematicTool.dialog.cancel",
                 variant: server_editor_namespaceObject.ButtonVariant.Secondary
             });
@@ -40530,7 +41447,7 @@ var __webpack_exports__ = {};
                     }
                 },
                 defaultSlots: this._createControlPointSlots(),
-                layout: {
+                slotConfig: {
                     height: 4.4,
                     clickable: true,
                     entryLayout: [ {
@@ -40628,12 +41545,15 @@ var __webpack_exports__ = {};
                     z: 3e6
                 },
                 onChange: value => {
+                    const beforeState = this._getCurrentStateSnapshot();
                     selectedPoint.position = {
                         ...value
                     };
                     this._updateSelectedWidget();
                     this._updateSplineVisualization();
+                    this._updateSpeedDots();
                     this.storeControlPointsToWorld();
+                    this._commitPropertyChange("Cinematic: Change position", beforeState);
                 }
             });
             this.viewDirectionInput = this.controlPointDetailsPane.addVector2(this.viewDirectionObservable, {
@@ -40648,12 +41568,14 @@ var __webpack_exports__ = {};
                     y: 360
                 },
                 onChange: value => {
+                    const beforeState = this._getCurrentStateSnapshot();
                     selectedPoint.viewDirection = {
                         x: Math.round(value.x * 100) / 100,
                         y: Math.round(value.y * 100) / 100
                     };
                     this._updateSelectedWidgetText();
                     this.storeControlPointsToWorld();
+                    this._commitPropertyChange("Cinematic: Change rotation", beforeState);
                 }
             });
             const easingEntries = [];
@@ -40670,6 +41592,7 @@ var __webpack_exports__ = {};
                 onChange: value => {
                     selectedPoint.easingType = easingTypes[value];
                     this.storeControlPointsToWorld();
+                    this._updateSpeedDots();
                 }
             });
             this.timeInput = this.controlPointDetailsPane.addNumber(this.timeObservable, {
@@ -40756,30 +41679,32 @@ var __webpack_exports__ = {};
             if (selectedIndices.length === 0) {
                 return;
             }
+            this._beginUndoTransaction("Cinematic: Bulk delete");
             for (let i = selectedIndices.length - 1; i >= 0; i--) {
                 const index = selectedIndices[i];
                 const cp = this.controlPoints[index];
                 if (cp.widget) {
-                    try {
-                        cp.widget.delete();
-                    } catch {}
+                    cp.widget.delete();
                 }
                 this.controlPoints.splice(index, 1);
             }
             this.selectedControlPointIndex = this.controlPoints.length > 0 ? 0 : -1;
             this._refreshUIState();
-            this.uiSession.log.info(`Deleted ${selectedIndices.length} control points`);
+            this._commitUndoTransaction();
+            this.uiSession.log.info({
+                id: "resourcePack.editor.CinematicTool.log.deletedBulk",
+                props: [ `${selectedIndices.length}` ]
+            });
         }
         _deleteCurrentControlPoint() {
             if (this.selectedControlPointIndex < 0 || this.selectedControlPointIndex >= this.controlPoints.length) {
                 this.uiSession.log.info("No selected control point to delete");
                 return;
             }
+            this._beginUndoTransaction("Cinematic: Delete control point");
             const deleted = this.controlPoints[this.selectedControlPointIndex];
             if (deleted.widget) {
-                try {
-                    deleted.widget.delete();
-                } catch {}
+                deleted.widget.delete();
             }
             this.controlPoints.splice(this.selectedControlPointIndex, 1);
             if (this.controlPoints.length === 0) {
@@ -40788,7 +41713,11 @@ var __webpack_exports__ = {};
                 this.selectedControlPointIndex = this.controlPoints.length - 1;
             }
             this._refreshUIState();
-            this.uiSession.log.info(`Deleted control point: ${deleted.name}`);
+            this._commitUndoTransaction();
+            this.uiSession.log.info({
+                id: "resourcePack.editor.CinematicTool.log.deletedSingle",
+                props: [ deleted.name ]
+            });
         }
         _getSelectedControlPointIndices() {
             const selectedIndices = [];
@@ -40831,8 +41760,10 @@ var __webpack_exports__ = {};
                     }
                     if (data.mouseEvent !== undefined) {
                         const isMousePress = data.mouseEvent.action === server_editor_namespaceObject.WidgetMouseButtonActionType.Pressed;
+                        const isMouseRelease = data.mouseEvent.action === server_editor_namespaceObject.WidgetMouseButtonActionType.Released;
                         const isLeftClick = !data.mouseEvent.shiftPressed && !data.mouseEvent.controlPressed && !data.mouseEvent.altPressed;
                         if (isMousePress && isLeftClick) {
+                            this._widgetDragBeforeState = this._getCurrentStateSnapshot();
                             if (this.selectedControlPointIndex !== currentIndex) {
                                 this.selectedControlPointIndex = currentIndex;
                                 this._updateControlPointDetails();
@@ -40842,6 +41773,22 @@ var __webpack_exports__ = {};
                                     this.controlPointDetailsPane?.show();
                                 }
                             }
+                        }
+                        if (isMouseRelease && this._widgetDragBeforeState) {
+                            const afterState = this._getCurrentStateSnapshot();
+                            const beforeJson = JSON.stringify(this._widgetDragBeforeState);
+                            const afterJson = JSON.stringify(afterState);
+                            if (beforeJson !== afterJson) {
+                                this.uiSession.extensionContext.transactionManager.openTransaction("Cinematic: Move control point");
+                                this.transactionHandler?.addUserDefinedOperation({
+                                    beforeState: this._widgetDragBeforeState,
+                                    afterState
+                                }, "Cinematic Tool");
+                                this.uiSession.extensionContext.transactionManager.commitOpenTransaction();
+                            }
+                            this._widgetDragBeforeState = undefined;
+                            this._updateSplineVisualization();
+                            this._updateSpeedDots();
                         }
                     }
                     if (data.location !== undefined) {
@@ -40902,6 +41849,7 @@ var __webpack_exports__ = {};
             }
             this.splineUpdateTimeoutId = server_namespaceObject.system.runTimeout((() => {
                 this._updateSplineVisualization();
+                this._updateSpeedDots();
                 this.splineUpdateTimeoutId = undefined;
             }), this.SPLINE_UPDATE_DELAY_MS / 1e3 * server_namespaceObject.TicksPerSecond);
         }
@@ -40922,18 +41870,14 @@ var __webpack_exports__ = {};
         _destroyAllControlPointWidgets() {
             this.controlPoints.forEach((cp => {
                 if (cp.widget) {
-                    try {
-                        cp.widget.delete();
-                    } catch {}
+                    cp.widget.delete();
                     cp.widget = undefined;
                 }
             }));
         }
         _updateSplineVisualization() {
             if (this.splineWidget) {
-                try {
-                    this.splineWidget.delete();
-                } catch {}
+                this.splineWidget.delete();
                 this.splineWidget = undefined;
                 this.splineComponent = undefined;
             }
@@ -40977,13 +41921,127 @@ var __webpack_exports__ = {};
                 }
             }));
             this._updateSplineVisualization();
+            this._updateSpeedDots();
+        }
+        _clearSpeedDots() {
+            for (const dotWidget of this.speedDotWidgets) {
+                dotWidget.delete();
+            }
+            this.speedDotWidgets = [];
+        }
+        _updateSpeedDots() {
+            this._clearSpeedDots();
+            if (!this.showSpeedDots.value || this.controlPoints.length < 2) {
+                return;
+            }
+            const duration = this.totalDuration.value;
+            const sortedPoints = [ ...this.controlPoints ].sort(((a, b) => a.timeSeconds - b.timeSeconds));
+            for (let t = 0; t <= duration; t += this.SPEED_DOT_INTERVAL_SECONDS) {
+                const position = this._interpolatePosition(sortedPoints, t);
+                if (!position) {
+                    continue;
+                }
+                const dotWidget = this.widgetGroup.createWidget(position, {
+                    selectable: false,
+                    snapToBlockLocation: false,
+                    visible: true,
+                    collisionRadius: 0,
+                    widgetName: `speed_dot_${t.toFixed(2)}`
+                });
+                const sphere = new server_editor_namespaceObject.WidgetComponentRenderPrimitiveTypeAxialSphere({
+                    x: 0,
+                    y: 0,
+                    z: 0
+                }, this.SPEED_DOT_RADIUS, {
+                    red: 1,
+                    green: .8,
+                    blue: .2,
+                    alpha: .8
+                });
+                dotWidget.addRenderPrimitiveComponent(`dot_${t.toFixed(2)}`, sphere);
+                this.speedDotWidgets.push(dotWidget);
+            }
+        }
+        _interpolatePositionGeometric(sortedPoints, timeSeconds) {
+            if (sortedPoints.length === 0) {
+                return undefined;
+            }
+            if (timeSeconds <= sortedPoints[0].timeSeconds) {
+                return {
+                    ...sortedPoints[0].position
+                };
+            }
+            if (timeSeconds >= sortedPoints[sortedPoints.length - 1].timeSeconds) {
+                return {
+                    ...sortedPoints[sortedPoints.length - 1].position
+                };
+            }
+            const isCatmullRom = this.selectedSplineTypeIndex.value === SplineTypeDropdownSelection.CatmullRom;
+            for (let i = 0; i < sortedPoints.length - 1; i++) {
+                const p0 = sortedPoints[i];
+                const p1 = sortedPoints[i + 1];
+                if (timeSeconds >= p0.timeSeconds && timeSeconds <= p1.timeSeconds) {
+                    const segmentDuration = p1.timeSeconds - p0.timeSeconds;
+                    if (segmentDuration <= 0) {
+                        return {
+                            ...p0.position
+                        };
+                    }
+                    const t = (timeSeconds - p0.timeSeconds) / segmentDuration;
+                    if (isCatmullRom && sortedPoints.length >= 2) {
+                        const pm1 = sortedPoints[Math.max(0, i - 1)].position;
+                        const pc0 = p0.position;
+                        const pc1 = p1.position;
+                        const pp2 = sortedPoints[Math.min(sortedPoints.length - 1, i + 2)].position;
+                        return catmullRom(pm1, pc0, pc1, pp2, t);
+                    } else {
+                        return {
+                            x: p0.position.x + (p1.position.x - p0.position.x) * t,
+                            y: p0.position.y + (p1.position.y - p0.position.y) * t,
+                            z: p0.position.z + (p1.position.z - p0.position.z) * t
+                        };
+                    }
+                }
+            }
+            return undefined;
+        }
+        _interpolatePosition(sortedPoints, timeSeconds) {
+            if (sortedPoints.length === 0) {
+                return undefined;
+            }
+            if (timeSeconds <= sortedPoints[0].timeSeconds) {
+                return {
+                    ...sortedPoints[0].position
+                };
+            }
+            if (timeSeconds >= sortedPoints[sortedPoints.length - 1].timeSeconds) {
+                return {
+                    ...sortedPoints[sortedPoints.length - 1].position
+                };
+            }
+            for (let i = 0; i < sortedPoints.length - 1; i++) {
+                const p0 = sortedPoints[i];
+                const p1 = sortedPoints[i + 1];
+                if (timeSeconds >= p0.timeSeconds && timeSeconds <= p1.timeSeconds) {
+                    const segmentDuration = p1.timeSeconds - p0.timeSeconds;
+                    if (segmentDuration <= 0) {
+                        return {
+                            ...p0.position
+                        };
+                    }
+                    const t = (timeSeconds - p0.timeSeconds) / segmentDuration;
+                    const easedT = applyEasing(t, p0.easingType);
+                    const easedGlobalTime = p0.timeSeconds + easedT * segmentDuration;
+                    return this._interpolatePositionGeometric(sortedPoints, easedGlobalTime);
+                }
+            }
+            return undefined;
         }
         _destroyAllWidgets() {
             this._destroyAllControlPointWidgets();
+            this._clearSpeedDots();
             if (this.splineWidget) {
-                try {
-                    this.splineWidget.delete();
-                } catch {}
+                this.splineWidget.delete();
                 this.splineWidget = undefined;
                 this.splineComponent = undefined;
             }
@@ -41013,12 +42071,14 @@ var __webpack_exports__ = {};
             }
             this._updateSplineVisualization();
             this._updatePlayAnimationButtonState();
+            this._updateSpeedDots();
             this.storeControlPointsToWorld();
         }
         _normalizeYaw(angle) {
             return (angle % 360 + 360) % 360;
         }
         _addControlPoint() {
+            this._beginUndoTransaction("Cinematic: Add control point");
             const player = this.uiSession.extensionContext.player;
             const playerRotation = player.getRotation();
             const viewDirection = player.getViewDirection();
@@ -41028,10 +42088,11 @@ var __webpack_exports__ = {};
             const baseName = "Point";
             const uniqueName = this._handleDuplicatePointName(baseName);
             const newPoint = {
-                id: `cp_${this.nextControlPointId++}`,
+                id: `cp_${this.nextControlPointId}`,
+                order: this.nextControlPointId++,
                 name: uniqueName,
                 position: {
-                    ...player.location
+                    ...player.getHeadLocation()
                 },
                 viewDirection: {
                     x: Math.round(pitch * 100) / 100,
@@ -41048,7 +42109,11 @@ var __webpack_exports__ = {};
             newPoint.widget = this._createControlPointWidget(newPoint);
             this.selectedControlPointIndex = this.controlPoints.length - 1;
             this._refreshUIState(false);
-            this.uiSession.log.info(`Added control point: ${newPoint.name}`);
+            this._commitUndoTransaction();
+            this.uiSession.log.info({
+                id: "resourcePack.editor.CinematicTool.log.addedPoint",
+                props: [ newPoint.name ]
+            });
         }
         _hideControlPointWidget(controlPointId) {
             const controlPoint = this.controlPoints.find((cp => cp.id === controlPointId));
@@ -41103,15 +42168,7 @@ var __webpack_exports__ = {};
             this._restoreHiddenWidget();
             this._hideControlPointWidget(selectedPoint.id);
             const player = this.uiSession.extensionContext.player;
-            const playerPosition = player.location;
-            const playerHeadPosition = player.getHeadLocation();
-            const cameraHeadOffset = {
-                x: 0,
-                y: .1,
-                z: 0
-            };
-            const playerCameraPosition = lib.Vector3Utils.add(playerHeadPosition, cameraHeadOffset);
-            const playerCameraDelta = lib.Vector3Utils.subtract(playerCameraPosition, playerPosition);
+            const headToFeetOffset = lib.Vector3Utils.subtract(player.getHeadLocation(), player.location);
             const easeTimeInSeconds = .75;
             const targetPosition = selectedPoint.position;
             const targetRotation = selectedPoint.playerRotation;
@@ -41130,7 +42187,7 @@ var __webpack_exports__ = {};
                 };
                 player.camera.setCamera("minecraft:free", cameraPositionOptions);
             }), .1 * server_namespaceObject.TicksPerSecond);
-            const newPlayerPositionTarget = lib.Vector3Utils.subtract(targetPosition, playerCameraDelta);
+            const newPlayerPositionTarget = lib.Vector3Utils.subtract(targetPosition, headToFeetOffset);
             this.moveToPointTeleportTimeoutId = server_namespaceObject.system.runTimeout((() => {
                 this.moveToPointTeleportTimeoutId = undefined;
                 player.camera.setCamera("minecraft:first_person");
@@ -41149,9 +42206,10 @@ var __webpack_exports__ = {};
                 this.uiSession.log.info("No control point selected");
                 return;
             }
+            this._beginUndoTransaction("Cinematic: Update point location");
             const player = this.uiSession.extensionContext.player;
             selectedPoint.position = {
-                ...player.location
+                ...player.getHeadLocation()
             };
             const viewDirection = player.getViewDirection();
             const yaw = Math.atan2(-viewDirection.x, -viewDirection.z) * (180 / Math.PI);
@@ -41180,12 +42238,21 @@ var __webpack_exports__ = {};
             this._updateSelectedWidgetText();
             this._updateSplineVisualization();
             this.storeControlPointsToWorld();
+            this._commitUndoTransaction();
         }
         _sortControlPointTimes() {
+            const selectedId = this.selectedControlPointIndex >= 0 ? this.controlPoints[this.selectedControlPointIndex]?.id : undefined;
             this.controlPoints.sort(((a, b) => a.timeSeconds - b.timeSeconds));
+            if (selectedId) {
+                this.selectedControlPointIndex = this.controlPoints.findIndex((cp => cp.id === selectedId));
+            }
         }
         _sortAndNormalizeControlPointTimes() {
+            const selectedId = this.selectedControlPointIndex >= 0 ? this.controlPoints[this.selectedControlPointIndex]?.id : undefined;
             this.controlPoints.sort(((a, b) => a.timeSeconds - b.timeSeconds));
+            if (selectedId) {
+                this.selectedControlPointIndex = this.controlPoints.findIndex((cp => cp.id === selectedId));
+            }
             if (this.controlPoints.length > 0) {
                 this.controlPoints[0].timeSeconds = 0;
                 if (this.controlPoints.length > 1) {
@@ -41322,6 +42389,7 @@ var __webpack_exports__ = {};
             });
             player.camera.playAnimation(spline, animationOptions);
             this.isAnimating = true;
+            this.widgetGroup.visible = false;
             if (this.playAnimationButton) {
                 this.playAnimationButton.visible = false;
             }
@@ -41355,6 +42423,7 @@ var __webpack_exports__ = {};
             this.isAnimating = false;
             this.animationTimeoutId = undefined;
             this.previousCameraState = undefined;
+            this.widgetGroup.visible = true;
             if (this.playAnimationButton) {
                 this.playAnimationButton.visible = true;
             }
@@ -41408,6 +42477,112 @@ var __webpack_exports__ = {};
             this.uiSession.log.info("Animation function has been copied to clipboard.", {
                 channelMask: server_editor_namespaceObject.LogChannel.All
             });
+        }
+        _exportJSON() {
+            const data = {
+                controlPoints: this.controlPoints.map((cp => ({
+                    id: cp.id,
+                    order: cp.order,
+                    name: cp.name,
+                    position: cp.position,
+                    viewDirection: cp.viewDirection,
+                    playerRotation: cp.playerRotation,
+                    easingType: cp.easingType,
+                    timeSeconds: cp.timeSeconds
+                }))),
+                totalDuration: this.totalDuration.value,
+                splineType: this.selectedSplineTypeIndex.value
+            };
+            const json = JSON.stringify(data, undefined, 2);
+            const transferManager = server_editor_private_bindings_namespaceObject.editorInternal.getPlayerServices(this.uiSession.extensionContext.player).dataTransfer;
+            transferManager.sendDataToClipboard(json);
+            this.telemetryManager.fireTelemetryEvent(CinematicTelemetry.ExportJSON, {
+                controlPointCount: this.controlPoints.length
+            });
+            this.uiSession.log.info({
+                id: "resourcePack.editor.CinematicTool.log.exportedJSON"
+            }, {
+                channelMask: server_editor_namespaceObject.LogChannel.All
+            });
+        }
+        _importJSON() {
+            this.importJsonText.set("");
+            if (this.importJsonDialog) {
+                this.uiSession.dialogManager.activateDialog({
+                    dialogId: this.importJsonDialog.id
+                });
+            }
+        }
+        _processImportJSON() {
+            const jsonStr = this.importJsonText.value.trim();
+            if (!jsonStr) {
+                this.uiSession.log.error("No JSON data provided.", {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
+                return;
+            }
+            try {
+                const data = JSON.parse(jsonStr);
+                if (!data.controlPoints || !Array.isArray(data.controlPoints) || data.controlPoints.length === 0) {
+                    this.uiSession.log.error({
+                        id: "resourcePack.editor.CinematicTool.log.importInvalidJSON"
+                    }, {
+                        channelMask: server_editor_namespaceObject.LogChannel.All
+                    });
+                    return;
+                }
+                this._beginUndoTransaction("Cinematic: Import JSON");
+                for (const cp of this.controlPoints) {
+                    if (cp.widget) {
+                        cp.widget.delete();
+                    }
+                }
+                this.controlPoints = data.controlPoints.map((stored => ({
+                    id: stored.id,
+                    order: stored.order,
+                    name: stored.name,
+                    position: stored.position,
+                    viewDirection: stored.viewDirection,
+                    playerRotation: stored.playerRotation,
+                    easingType: stored.easingType,
+                    timeSeconds: stored.timeSeconds
+                })));
+                if (data.totalDuration) {
+                    this.totalDuration.set(data.totalDuration);
+                }
+                if (data.splineType !== undefined) {
+                    this.selectedSplineTypeIndex.set(data.splineType);
+                }
+                if (this.controlPoints.length > 0) {
+                    const maxOrder = Math.max(...this.controlPoints.map((cp => cp.order)));
+                    this.nextControlPointId = maxOrder + 1;
+                }
+                this.selectedControlPointIndex = -1;
+                this._createAllControlPointWidgets();
+                this._refreshControlPointsList();
+                this._updateControlPointDetails();
+                this._updatePlayAnimationButtonState();
+                this._updateSplineVisualization();
+                this._updateSpeedDots();
+                this.storeControlPointsToWorld();
+                this._commitUndoTransaction();
+                this.telemetryManager.fireTelemetryEvent(CinematicTelemetry.ImportJSON, {
+                    controlPointCount: this.controlPoints.length
+                });
+                this.uiSession.log.info({
+                    id: "resourcePack.editor.CinematicTool.log.importedJSON",
+                    props: [ `${this.controlPoints.length}` ]
+                }, {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
+            } catch (e) {
+                this.uiSession.log.error({
+                    id: "resourcePack.editor.CinematicTool.log.importParseError",
+                    props: [ (0, server_editor_namespaceObject.stringFromException)(e) ]
+                }, {
+                    channelMask: server_editor_namespaceObject.LogChannel.All
+                });
+            }
         }
         _validateMinimumControlPoints(actionName) {
             const config = SPLINE_TYPE_CONFIGS[this.selectedSplineTypeIndex.value];
