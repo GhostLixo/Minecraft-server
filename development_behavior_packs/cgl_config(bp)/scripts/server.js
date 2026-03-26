@@ -1,9 +1,7 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
-
 const app = express();
-const client = new MongoClient("mongodb://localhost:27017");
-
+const client = new MongoClient("mongodb://localhost:27017"); // §s Endereço da host do mongo
 app.use(express.json()); // ✅ FIX 1 — sem isso req.body fica undefined
 
 async function main() {
@@ -23,9 +21,18 @@ async function main() {
     const teste = await clans.find({}, { projection: { nome: 1, _id: 0 } }).toArray();
     res.json(teste);
   });
+  
+  app.get("/carregarListaMembros/:doclan", async (req, res) => {
+    const {doclan} = req.params;
+    const listandoMembros = await clans.findOne( { nome: doclan }, { projection: { ListaMembros: 1, _id: 0}});
+    if (!listandoMembros) return res.status(404).json({ Erro: "Clã não encontrado"});
+    res.status(200).json(listandoMembros.ListaMembros);
+  });
 
-  // POST — Cria e Salva o clã
-  app.post("/SalvaClan", async (req, res) => { // ✅ FIX 3 — rota corrigida para /clans (igual ao Minecraft)
+
+
+  // §a POST — Cria e Salva o nome do clã e cria a lista membros --> nome: "", ListaMembros: [ ]
+  app.post("/SalvarClan", async (req, res) => { //§e  Sempre Verifique se o primeiro parametro é igual ao que você definiu em new httpRequest
     try {
       const { nome, ListaMembros } = req.body;
       if (!nome) return res.status(400).json({ erro: "nome obrigatório" });
@@ -38,17 +45,23 @@ async function main() {
 
   });
   app.post("/adicionarMembro", async (req, res) => {
-    const { nome, ADDmembro } = req.body;
-    await clans.updateOne(
-        { nome: nome },
-        { $push: { ListaMembros: ADDmembro } }
-    );
-   });
+    try {
+        const { nome, ADDmembro } = req.body;
+        await clans.updateOne(
+            { nome: nome },
+            { $push: { ListaMembros: ADDmembro } }
+        );
+        res.status(200).json({ mensagem: "Membro adicionado!" }); // ← faltava isso!
+    } catch (err) {
+        res.status(500).json({ erro: err.message });
+    }
+});
 
   app.listen(3000, () => console.log("✅ API rodando na porta 3000"));
 }
 
 main();
+
 
 
 

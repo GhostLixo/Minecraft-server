@@ -1,4 +1,4 @@
-import "./mundo/clan"
+import "./Interfaces/clan.js"
 import "./test.js"
 //entidades
 //import "./entidades/Stats.js"

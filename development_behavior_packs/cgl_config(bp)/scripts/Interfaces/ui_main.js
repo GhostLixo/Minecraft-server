@@ -1,71 +1,58 @@
 import { world, system } from "@minecraft/server"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { formmeuclan,  formconvitarMembro,
-    form_membrosclan, form_expulsarmembro,
+    form_ListarMembros, form_expulsarmembro,
     form_promovermembro, form_rebaixarmembro,
     form_sairclan, formcriaclan, arrayclan, MostrarClans, DBCarregarClanName, DeixarBilhete,
-    VerBilhete, TextoBilhete} from  "./clan_ex"
+    VerBilhete, TextoBilhete, arrayMembros,
+    DBCarregarListaMembros, form_MostrarRegras, arrayClanRegras, form_definirouVerRegras} from  "./clan_ex"
 
 
 system.run(() => {
     world.afterEvents.itemUse.subscribe((ev) => {
-        const item = ev.itemStack
-        const player = ev.source
-        DBCarregarClanName();
+        const item = ev.itemStack;
+        const player = ev.source;
+        
+    
 
-        if (item.typeId === "minecraft:compass") {
-            abrirMenuPrincipal(player);
-            console.log("Do cla -->" + player.getDynamicProperty("doclan"));
-            console.log("Valor cla -->" + player.getDynamicProperty("nivelClan") + typeof(player.getDynamicProperty("nivelClan")));
-            if (player.getDynamicProperty("nivelClan") >= 3){
-                console.log("true");
-            }else{
-                console.log("false");
-            }
-            if (player.getDynamicProperty("doclan") != "civil"){
-                console.log("Sim é diferente de civil");
-            }
-        }
-    })
-})
+        if (item.typeId === "minecraft:compass") { abrirMenuPrincipal(player); }
+    });
+});
     
     //menu principal
-    function abrirMenuPrincipal(player) {
-        const main_form = new ActionFormData();
-        main_form.title("menu");
+function abrirMenuPrincipal(player) {
+    const main_form = new ActionFormData();
+    main_form.title("MENU PRINCIPAL");
         main_form.label(
             `Id [${player.getDynamicProperty("id")}]\n`+
             `idade 18 | sexo M\nClã --> ${player.getDynamicProperty("doclan")}`);
-        main_form.button("status");
-        //if (player.getDynamicProperty("clan") == "civil") {main_form.button("clan")};
-        if (player.getDynamicProperty("doclan") == "civil") 
-              {main_form.button("|>>>  Clãs  <<<|");
-        }else {main_form.button("--- Meu Clã ---");}
+    main_form.button("Status");
+
+    if (player.getDynamicProperty("doclan") == "civil") 
+           { main_form.button("|>>>  Clãs  <<<|");  }
+    else   { main_form.button("=--- Meu Clã ---="); }
         
-        main_form.button("pay");
-        if (player.hasTag("admin")) { main_form.button("admin");}
+    main_form.button("Banco");
+    if (player.hasTag("admin")) { main_form.button("admin");}
 
-
-        main_form.show(player).then((response) => {
-            if (response.canceled) {
-                player.sendMessage("esta off");
-            }
-            switch (response.selection) {
-                case 0:
-                    abrirMenuStatus(player);
-                    break;
-                case 1:
-                    abrirMenuClan(player);
-                    break;
-                case 2:
-                    abrirMenuPay(player);
-                    break;
-                case 3:
-                    abrirMenuAdmin(player);
-                    break;
-            }
-        });
-    }
+    main_form.show(player).then((response) => {
+        if (response.canceled) {  return; }
+        switch (response.selection) {
+            case 0:
+                abrirMenuStatus(player);
+                break;
+            case 1:
+                abrirMenuClan(player);
+                break;
+            case 2:
+                abrirMenuPay(player);
+                break;
+            case 3:
+                abrirMenuAdmin(player);
+                break;
+        }
+    });
+}
     //////////////////////////////////////
 
     //menu status
@@ -83,7 +70,7 @@ system.run(() => {
 
         status_form.show(player).then((response) => {
             if (response.canceled) {
-                player.sendMessage("ola vc saiu");
+                status_form = null; return;
             }
 
             switch (response.selection) {
@@ -121,7 +108,7 @@ system.run(() => {
 
       pay_form.show(player).then((response) => {
         if (response.canceled) {
-          player.sendMessage("teste54165");
+          pay_form = null; return;
         } else {
           const [dropdownValue, quantidadeDinheiro] = response.formValues;
           money.addScore(player, -quantidadeDinheiro);
@@ -135,6 +122,7 @@ system.run(() => {
 
     /////////////////////////////////////////// Clan/////////////
     function abrirMenuClan(player){
+        DBCarregarListaMembros(player.getDynamicProperty("doclan"));
 const formMenuClan = new ActionFormData()
     .title("Clan Menu")
     if (player.getDynamicProperty("doclan") != "civil") {
@@ -152,6 +140,8 @@ const formMenuClan = new ActionFormData()
                 formMenuClan.button("Bilhetes dos Superiores");
                 formMenuClan.button("Deixar Bilhete");
                 formMenuClan.button("Membros do Clã", "textures/ui/people.png");
+                formMenuClan.button("Expulsar Membro");
+                formMenuClan.button("Convidar Civil");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
             case 3:
@@ -159,6 +149,9 @@ const formMenuClan = new ActionFormData()
                 formMenuClan.button("Regras do Clã");
                 formMenuClan.button("Deixar Bilhete");
                 formMenuClan.button("Membros do Clã", "textures/ui/people.png");
+                formMenuClan.button("Promover Membro");
+                formMenuClan.button("Rebaixar Membro");
+                formMenuClan.button("Expulsar Membro");
                 formMenuClan.button("Convidar Civil");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
                 break;
@@ -215,10 +208,10 @@ const formMenuClan = new ActionFormData()
     // }
         
     formMenuClan.show(player).then((response) => {
-        if (response.canceled) {
-            return;}
+        if (response.canceled) { return;}
             ///////////////////////////////////    Form Civil
         if (player.getDynamicProperty("doclan") == "civil"){
+            DBCarregarClanName();
         
             switch (response.selection){
                 case 0:// Criar clã
@@ -238,6 +231,7 @@ const formMenuClan = new ActionFormData()
                 break;
                 case 1:// Regras
                 console.log("case1 nivel 1 ");
+
                 break;
                 case 2:// Bilhetes
                 console.log("case2 nivel 1");
@@ -264,6 +258,7 @@ const formMenuClan = new ActionFormData()
                 form_membrosclan(player);
                 break;
                 case 4:// Sair do clã
+                form_sairclan(player);
                 console.log("case4 nivel 1");
                 
                 break;
@@ -274,7 +269,7 @@ const formMenuClan = new ActionFormData()
                 case 0:// Informação
                 console.log("case0 nivel 2");
                 break;
-                case 1:// Regras
+                case 1:// Regra
                 console.log("case1 nivel 2");
                 break;
                 case 2:// Bilhetes
@@ -296,9 +291,26 @@ const formMenuClan = new ActionFormData()
             switch (response.selection) {
             case 0:
                 console.log("case0 else");
+                form_definirouVerRegras(player);
+
                 //formmeuclan(player)
                 break;
             case 1:
+                if (TextoBilhete.length == 0){
+                    const aviso = "Não há bilhetes no momento..."
+                    VerBilhete(player, aviso);
+                    console.log("simasas");
+                }else {
+                    for (let x in TextoBilhete){
+                        if (TextoBilhete[x].clanName == player.getDynamicProperty("doclan")){
+                            VerBilhete(player, TextoBilhete[x].recado)
+                    }else {
+                        console.log("Não tem bilhete para voce");
+                    }
+
+                }
+            }
+                console.log("Bilhete 1 --> " ,TextoBilhete.length);
                 console.log("case1");
                 //formlistclans(player)
                 break;
@@ -309,17 +321,29 @@ const formMenuClan = new ActionFormData()
                 break;
             case 3:
                 console.log("case3");
-                //formmembrosclan(player)
+                form_ListarMembros(player, arrayMembros)
                 break;
             case 4:
                 console.log("case4");
-                formconvitarMembro(player)
+                formconvitarMembro(player);
                 break;
             case 5:
                 console.log("case5");
                 form_sairclan(player);
                 break;
+            case 6: 
+            break;
+            case 7: 
+                console.log("Case 7 nivel 3");
+                formconvitarMembro(player);
+            break;
+            case 8:
+                console.log("case 8 nivel 3");
+                form_sairclan(player);
+            break;
             }
+            
+
         }
     });
 
@@ -371,6 +395,9 @@ const formMenuClan = new ActionFormData()
             }
             if (player.getDynamicProperty("doclan") === undefined) {
                 player.setDynamicProperty("doclan", "civil");
+            }
+            if (player.getDynamicProperty("temconvite?") === undefined) {
+                player.setDynamicProperty("temconvite?", false);
             }
 
         }

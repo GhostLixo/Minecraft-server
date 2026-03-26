@@ -1,37 +1,48 @@
-import {world, system, CommandPermissionLevel, CustomCommandStatus } from "@minecraft/server";
+import {world, system, CommandPermissionLevel, CustomCommandStatus, Entity, CustomCommandSource, CustomCommandOrigin } from "@minecraft/server";
+import { ClaName } from "./clan_ex"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+ 
 
 
 
 
 // Bloco de teste
 world.beforeEvents.chatSend.subscribe((ev) => {
-    if (ev.message == "!aceitarconvite"){
-        //if (){} Verificar se o player tem convite
-        world.sendMessage("Clan teste");
-    }
+    
 });
-function ConviteClan(player){
 
-}
 
 system.beforeEvents.startup.subscribe((init) => {
+    const AceitarConvitedeClan = { //criando uma variavel objeto e definindo suas propriedades
+        name: "clan:aceitarconvite", // nome do comando 
+        description: "Você foi convidado para um clã", // Descrevendo o que ele faz por exemplo --> Abrir painel do clan
+        permissionLevel: CommandPermissionLevel.Any };// Niveis de permissão 
+
+    init.customCommandRegistry.registerCommand(AceitarConvitedeClan, (origin) => {
+        if (!origin.sourceEntity.getDynamicProperty("temconvite?")){
+            origin.sourceEntity.sendMessage("Você não recebeu nenhum convite!"); 
+            return { status: 0};
+        }
+        else {
+                origin.sourceEntity.setDynamicProperty("doclan", ClaName);
+                    origin.sourceEntity.setDynamicProperty("nivelClan", 1);
+                        origin.sourceEntity.sendMessage("Parabens! Você agora faz parte do clã --> " + ClaName);
+                            origin.sourceEntity.setDynamicProperty("temconvite?", false);
+                                return { status: 1};
+        }
+    });
+
+
+    // const definirRegras = {
+    //     name: "clan:criarregras",
+    //     description: "Definir REGRAS do clã",
+    //     permissionLevel: CommandPermissionLevel.Any
+    // };
+    // init.customCommandRegistry.registerCommand(definirRegras, )
+    
+
+    
     const comandoPersonalizado2 = { //criando uma variavel objeto e definindo suas propriedades
         name: "clan:painel2", // nome do comando 
         description: "teste", // Descrevendo o que ele faz por exemplo --> Abrir painel do clan
@@ -46,6 +57,7 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "teste", 
         permissionLevel: CommandPermissionLevel.Any };
     init.customCommandRegistry.registerCommand(sairdoclan, Sairclan);
+    
 
     // const AceitarConvitedeClan = { //criando uma variavel objeto e definindo suas propriedades
     //     name: "clan:aceitarconvite", // nome do comando 
@@ -63,11 +75,11 @@ function comandinho() {
     system.run(() => {
         const fabricio = world.getAllPlayers().filter((player) => player.name == "Fabricio7560");
         fabricio[0].setDynamicProperty("nivelClan", 3);
-        fabricio[0].setDynamicProperty("doclan", "admin");
+        fabricio[0].setDynamicProperty("doclan", "werew");
         
     });
     return {
-        status: CustomCommandStatus.Success,
+        status: CustomCommandStatus.Success
     };
 }
 
@@ -77,7 +89,8 @@ function Sairclan(){
         fabricio[0].setDynamicProperty("nivelClan", 0);
         fabricio[0].setDynamicProperty("doclan", "civil");});
     return {
-        status: CustomCommandStatus.Success,
+        status: CustomCommandStatus.Success
     };
+
 }
 

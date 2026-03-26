@@ -1,6 +1,6 @@
 import { world } from "@minecraft/server";
 import { http, HttpRequest, HttpRequestMethod } from "@minecraft/server-net";
-
+export let a = "dfsdf";
 // Função para buscar dados do banco
 async function buscarDadosBanco() {
   const request = new HttpRequest("http://localhost:3000/jogadores");
