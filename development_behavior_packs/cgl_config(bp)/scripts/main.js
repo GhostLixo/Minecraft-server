@@ -1,11 +1,11 @@
 import "./Interfaces/clan.js"
-import "./test.js"
+//import "./test.js"
 //entidades
 //import "./entidades/Stats.js"
 //import "./entidades/spawn.js"
 
 //interfaces
-import "./Interfaces/ui_main.js"
+import "./Interfaces/Interface_Clan.js"
 
 
 //mundo

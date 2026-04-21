@@ -15,35 +15,34 @@ export function formcriaclan(player) {
         formCreateClan
         .title("Criar Clã")
         .textField("Preencha os campos abaixo para criar seu clã\n\nNome do Clã", "Digite o nome do seu clan")
-        //.textField("Tag do Clan", "Digite a tag do seu clan")
-        //.toggle("Clan privado?", {defaultValue: false}) 
         .show(player)
         .then((response) => { if (response.canceled) return;
             
-            const clanName = response.formValues[0];
-            //const clanTag = response.formValues[1];
-            //const isPrivate = response.formValues[2];
-            DBsalvarClan(clanName, player.name).then(res => {
+            const clanName = response.formValues[0]?.trim();
+            if (!clanName || clanName.length > 24){
+                player.sendMessage("Nome do Clã §cInvalido! "); return;
+            }
+
+            DBsalvarClan(clanName, player.name).then(res => { // Parametros (Recebe o nome do clã inse - Recebe o nome do player)
                 if (res.status === 200) {
-                player.sendMessage(`Clã ${clanName} salvo no banco de dados!`);
-                console.log(res.body);
-                console.log("Slavo");
-                player.addTag(`clan_${clanName}`);
-                player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
-                player.setDynamicProperty("doclan", clanName);
-                player.sendMessage(`Você criou o clan ${clanName}`);
-            }   else { player.sendMessage(`Erro ao salvar clã: ${res.status}`); return; }
+                    console.log(`Clã ${clanName} salvo no banco de dados!`);
+                    player.addTag('clan_' + clanName);
+                    player.setDynamicProperty("nivelClan", 3);//nivel 3 para lider do clan
+                    player.setDynamicProperty("doclan", clanName);
+                    player.sendMessage(`Você criou o CLÃ --> ${clanName}`);
+                }   
+            else{player.sendMessage(`§cErro ao Criar o clã!`); console.log(`Erro ao Criar o clã: ${res.status}`); return; }
             });
         });
 } 
-function DBsalvarClan(clanName, lider) {
+function DBsalvarClan(clanName, Nome_do_criador) {
   const request = new HttpRequest("http://localhost:3000/SalvarClan");
   request.method = HttpRequestMethod.Post;
-  request.body = JSON.stringify({ nome: clanName, ListaMembros: lider });
-request.headers = [new HttpHeader("Content-Type", "application/json")];
+  request.body = JSON.stringify({ nome: clanName, ListaMembros: Nome_do_criador });
+  request.headers = [new HttpHeader("Content-Type", "application/json")];
   return http.request(request);
 }
-export async function DBCarregarClanName(){ // Retorna array do nome de todos os clãs
+export async function DBCarregarClansName(){ // Retorna array do nome de todos os clãs
     const requisitar = new HttpRequest("http://localhost:3000/carregarClanNames");
     requisitar.method = HttpRequestMethod.Get;
 
@@ -51,7 +50,7 @@ export async function DBCarregarClanName(){ // Retorna array do nome de todos os
     if (resposta.status === 200){
         const dados = JSON.parse(resposta.body);      // [ { nome: "ClanA" }, { nome: "ClanB" } ]
         arrayclan = dados.map(clan => clan.nome);
-        console.warn("DBCarregar ClanName carregando lista de clans ");
+        console.warn("FUNCAO  DBCarregarClansName() carregando lista de clans ");
     }
     else{
         console.log("Erro ao buscar dados [dbcarregarclanname]: " + resposta.status);
@@ -75,9 +74,7 @@ export function form_definirouVerRegras(player){
     formLiderRegras.button("Vizualizar Regras");
     formLiderRegras.show(player).then((response) => {
         if (response.canceled) return;
-        else {
-
-        }
+        
     });
 }
 
@@ -100,7 +97,7 @@ export function DeixarBilhete(player){
         }
     });
 }
-export function VerBilhete(player, bilhete){
+export function form_VerBilhete(player, bilhete){
     const formVerbilhete = new MessageFormData();
     formVerbilhete.title("Bilhetes dos Superiores");
     formVerbilhete.body(bilhete);
@@ -118,7 +115,7 @@ export function formconvitarMembro(player) { // Primeiro passo convidar
     const playerscivil = world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") !== player.getDynamicProperty("doclan"))
     if ( playerscivil.length == 0){ player.sendMessage("§cNão há civil para convidar"); return; }
 
-    const formConviteMembro = new ModalFormData()
+    const formConvidarMembro = new ModalFormData()
         .title("Convidar Membro")
         .dropdown("  Selecione um jogador para convidar\n\n\n", playerscivil.map(p => p.name))// Retorna os nomes de todos os civis
         .show(player)
@@ -148,7 +145,7 @@ export function formconvitarMembro(player) { // Primeiro passo convidar
         })
 } //feito mas nao testado
 function Mostrarconvite(JogadorConvidado, doclan, lider){
-    console.log("Jogador convidado " ,JogadorConvidado.name );
+    console.log("Jogador convidado ", JogadorConvidado.name );
     const form_convite = new MessageFormData();
     form_convite.title("Você foi convidado para participar de um clã!!!");
     form_convite.body(`${lider.name} convidou você para participar do clã: ${doclan}`);
@@ -156,12 +153,12 @@ function Mostrarconvite(JogadorConvidado, doclan, lider){
     form_convite.button2("Recusar convite");
     form_convite.show(JogadorConvidado).then((response) => {
         if (response.canceled){ console.warn("Cancelado");return;} 
-        console.log("Aceitar " + response.selection)
+    
         switch (response.selection){
             case 0:
                 console.warn("Caso 1 Aceitar");
                 console.warn("Caso 1 test", JogadorConvidado.name);
-                DbAdcionarMembro(JogadorConvidado.name, doclan, lider).then(res => {
+                DbAdcionarMembro(JogadorConvidado.name, doclan).then(res => {
                     if (res.status === 200) {
                         JogadorConvidado.setDynamicProperty("doclan", doclan);
                         JogadorConvidado.setDynamicProperty("nivelClan", 1);
@@ -171,32 +168,32 @@ function Mostrarconvite(JogadorConvidado, doclan, lider){
                     else {
                         console.log("db " ,  JogadorConvidado.name, " ", res.status); 
                 }});
+            break;
 
-                return;
             case 1:
                 console.warn("Caso 2 recusar");
                 lider.sendMessage(JogadorConvidado.name + " §cRecusou o convite");
-                return;
+            break;
         }
     });
 }
-function DbAdcionarMembro(convidado, entrou_no_clanName){
+function DbAdcionarMembro(Player_Convidado, entrou_no_clanName){
     
     const requisitar = new HttpRequest("http://localhost:3000/adicionarMembro");
     requisitar.method = HttpRequestMethod.Post;
-    requisitar.body = JSON.stringify({ nome: entrou_no_clanName, ADDmembro: convidado });
+    requisitar.body = JSON.stringify({ recebeu_ClanNome: entrou_no_clanName, recebeu_MembroConvidado: Player_Convidado });
     requisitar.headers = [new HttpHeader("Content-Type", "application/json")];
     return http.request(requisitar);
 }
 
 
-export function MostrarClans(player, variavel){// §a Finalizado
+export function MostrarClans(player, Array_CLans_nomes){// §a Finalizado
     const formClanList = new ActionFormData();
     let texto = "";
+    for (const x in Array_CLans_nomes){
+        texto = texto + `---> ${Array_CLans_nomes[x]}\n`
+    }
     formClanList.title("Clãs Existentes");
-    for (const x in variavel){
-        texto = texto + `---> ${variavel[x]}\n`
-    }  
     formClanList.body(`Veja a Lista dos Clãs existentes:\n${texto}`);
     formClanList.show(player).then((response) => {
         if (response.canceled) return;})
@@ -238,9 +235,9 @@ export function form_ListarMembros(player, arraymembros) {
 }
  // falta fazer
 
-export function form_expulsarmembro(player) {
+export function form_expulsarMembro(player) {
     const Membrosdocla = world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") == player.getDynamicProperty("doclan"));
-    if ( Membrosdocla.length == 1){ player.sendMessage("§cSó tem você no Clã, convide mais jogadores"); return; }
+    //if ( Membrosdocla.length == 1){ player.sendMessage("§cSó tem você online no clã, aguarde o jogador entrar"); return; }
     const expulsarMembro = new ModalFormData()
         .title("Expulsar um Membro do clã")
         .dropdown("  Selecione um jogador para Expulsar\n\n\n", Membrosdocla.map(p => p.name))// Retorna os nomes de todos os civis
@@ -248,8 +245,8 @@ export function form_expulsarmembro(player) {
         .then((response) => {
             if (response.canceled) return; 
             const jogadorSelecionado = Membrosdocla[response.formValues];
-            jogadorSelecionado.setDynamicProperty("temconvite?", true);
-            console.log("string " + jogadorSelecionado.name + "Tem convite: " + jogadorSelecionado.getDynamicProperty("temconvite?"))
+            
+            //DBexpulsarMembro(jogadorSelecionado, player.getDynamicProperty("doclan"));
             // console.log("teste " + JSON.stringify(jogadorSelecionado));
             // console.log("teste " + JSON.stringify(response.formValues));
             
@@ -266,6 +263,11 @@ function DBexpulsarMembro(playerExpulso, doclan){
 
 }
 export function form_promovermembro(player) {
+    const Membrosdocla = world.getAllPlayers().filter((p) => p.getDynamicProperty("doclan") == player.getDynamicProperty("doclan"));
+    if ( Membrosdocla.length == 1){ player.sendMessage("§cSó tem você no Clã, convide mais jogadores"); return; }
+    const form_promovermembro = new ModalFormData()
+        .title("Promover um Membro do clã");
+        
 } // falta fazer
 
 export function form_rebaixarmembro(player) {
@@ -281,8 +283,10 @@ export function form_sairclan(player) { // Função 100% pronta e funcional
         if (response.canceled) return;
         else{
             if (response.formValues[0] == "CONFIRMAR"){
+                player.runCommand('tag @s remove clan_' + player.getDynamicProperty("doclan"));
                 player.setDynamicProperty("doclan", "civil");
                 player.setDynamicProperty("nivelClan", 0);
+                
                 player.sendMessage("§eAgora você já não faz parte de nenhum Clã!!!");
             }
         }

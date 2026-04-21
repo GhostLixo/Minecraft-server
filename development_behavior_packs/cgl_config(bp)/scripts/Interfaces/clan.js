@@ -1,5 +1,5 @@
 import {world, system, CommandPermissionLevel, CustomCommandStatus, Entity, CustomCommandSource, CustomCommandOrigin } from "@minecraft/server";
-import { ClaName } from "./clan_ex"
+import { ClaName } from "./Sistema_De_Clan"
 
  
  
@@ -8,9 +8,7 @@ import { ClaName } from "./clan_ex"
 
 
 // Bloco de teste
-world.beforeEvents.chatSend.subscribe((ev) => {
-    
-});
+
 
 
 system.beforeEvents.startup.subscribe((init) => {

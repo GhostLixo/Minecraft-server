@@ -46,10 +46,10 @@ async function main() {
   });
   app.post("/adicionarMembro", async (req, res) => {
     try {
-        const { nome, ADDmembro } = req.body;
+        const { recebeu_ClanNome, recebeu_MembroConvidado } = req.body;
         await clans.updateOne(
-            { nome: nome },
-            { $push: { ListaMembros: ADDmembro } }
+            { nome: recebeu_ClanNome },
+            { $push: { ListaMembros: recebeu_MembroConvidado } }
         );
         res.status(200).json({ mensagem: "Membro adicionado!" }); // ← faltava isso!
     } catch (err) {
