@@ -18,7 +18,8 @@ export function formcriaclan(player) {
         .show(player)
         .then((response) => { if (response.canceled) return;
             
-            const clanName = response.formValues[0]?.trim();
+            const clanName = response.formValues[0]?.trim() + "§f";
+            
             if (!clanName || clanName.length > 24){
                 player.sendMessage("Nome do Clã §cInvalido! "); return;
             }
@@ -31,14 +32,14 @@ export function formcriaclan(player) {
                     player.setDynamicProperty("doclan", clanName);
                     player.sendMessage(`Você criou o CLÃ --> ${clanName}`);
                 }   
-            else{player.sendMessage(`§cErro ao Criar o clã!`); console.log(`Erro ao Criar o clã: ${res.status}`); return; }
+                else { player.sendMessage(`§cErro ao Criar o clã!`); console.log(`Erro ao Criar o clã: ${res.status}`); return; }
             });
         });
 } 
 function DBsalvarClan(clanName, Nome_do_criador) {
   const request = new HttpRequest("http://localhost:3000/SalvarClan");
   request.method = HttpRequestMethod.Post;
-  request.body = JSON.stringify({ nome: clanName, ListaMembros: Nome_do_criador });
+  request.body = JSON.stringify({ Nome: clanName, ListaMembros: Nome_do_criador });
   request.headers = [new HttpHeader("Content-Type", "application/json")];
   return http.request(request);
 }
@@ -56,8 +57,29 @@ export async function DBCarregarClansName(){ // Retorna array do nome de todos o
         console.log("Erro ao buscar dados [dbcarregarclanname]: " + resposta.status);
     }    
 }
+export async function DBCarregarListaMembros(doclan){ // Retorna array dos membros do clã, a função foi chamada em uiMain no itemUse
+    const requisitar = new HttpRequest(`http://localhost:3000/carregarListaMembros/${doclan}`);
+    requisitar.method = HttpRequestMethod.Get;
 
-
+    const resposta = await http.request(requisitar);
+    if (resposta.status === 200){
+              // [ { nome: "ClanA" }, { nome: "ClanB" } ]
+        arrayMembros = JSON.parse(resposta.body);
+        console.log("Consulta == " + JSON.parse(resposta.body));
+        console.log("Consulta == " + typeof(JSON.parse(resposta.body)));
+    }
+    else{
+        console.log("Erro ao buscar dados [dbcarregarListaMembros]: " + resposta.status);
+    }    
+}
+function DbAdcionarMembro(Player_Convidado, entrou_no_clanName){
+    
+    const requisitar = new HttpRequest("http://localhost:3000/adicionarMembro");
+    requisitar.method = HttpRequestMethod.Post;
+    requisitar.body = JSON.stringify({ recebeu_ClanNome: entrou_no_clanName, recebeu_MembroConvidado: Player_Convidado });
+    requisitar.headers = [new HttpHeader("Content-Type", "application/json")];
+    return http.request(requisitar);
+}
 export function form_MostrarRegras (player,clanTextoRegras){
     const formRegras = new MessageFormData();
     formRegras.title("Regras do Clã");
@@ -177,14 +199,7 @@ function Mostrarconvite(JogadorConvidado, doclan, lider){
         }
     });
 }
-function DbAdcionarMembro(Player_Convidado, entrou_no_clanName){
-    
-    const requisitar = new HttpRequest("http://localhost:3000/adicionarMembro");
-    requisitar.method = HttpRequestMethod.Post;
-    requisitar.body = JSON.stringify({ recebeu_ClanNome: entrou_no_clanName, recebeu_MembroConvidado: Player_Convidado });
-    requisitar.headers = [new HttpHeader("Content-Type", "application/json")];
-    return http.request(requisitar);
-}
+
 
 
 export function MostrarClans(player, Array_CLans_nomes){// §a Finalizado
@@ -200,21 +215,7 @@ export function MostrarClans(player, Array_CLans_nomes){// §a Finalizado
 }
 
 
-export async function DBCarregarListaMembros(doclan){ // Retorna array dos membros do clã, a função foi chamada em uiMain no itemUse
-    const requisitar = new HttpRequest(`http://localhost:3000/carregarListaMembros/${doclan}`);
-    requisitar.method = HttpRequestMethod.Get;
 
-    const resposta = await http.request(requisitar);
-    if (resposta.status === 200){
-              // [ { nome: "ClanA" }, { nome: "ClanB" } ]
-        arrayMembros = JSON.parse(resposta.body);
-        console.log("Consulta == " + JSON.parse(resposta.body));
-        console.log("Consulta == " + typeof(JSON.parse(resposta.body)));
-    }
-    else{
-        console.log("Erro ao buscar dados [dbcarregarListaMembros]: " + resposta.status);
-    }    
-}
 export function form_ListarMembros(player, arraymembros) {
      
     const formMembrosList = new ActionFormData();

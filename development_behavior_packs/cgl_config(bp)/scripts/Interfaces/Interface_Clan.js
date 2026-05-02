@@ -78,7 +78,7 @@ function abrirMenuPay(player) {
 
     /////////////////////////////////////////// Clan/////////////
 function abrirMenuClan(player){
-    DBCarregarListaMembros(player.getDynamicProperty("doclan"));// O servidor do banco de dados deve estar ativo
+    
 const formMenuClan = new ActionFormData()
     .title("Clan Menu")
     if (player.getDynamicProperty("doclan") != "civil") {
@@ -89,6 +89,7 @@ const formMenuClan = new ActionFormData()
                 formMenuClan.button("Bilhetes dos Superiores");
                 formMenuClan.button("Membros do Clã", "textures/ui/people.png");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
+                
                 break;
             case 2: // Os Membros braços tem os botão
                 formMenuClan.button("Informações do Clã");
@@ -99,7 +100,7 @@ const formMenuClan = new ActionFormData()
                 formMenuClan.button("Expulsar Membro");
                 formMenuClan.button("Convidar Civil");
                 formMenuClan.button("§cSair do Clã",    "textures/ui/close.png");
-                break;
+                
             case 3: // Botões do lider do clã
                 formMenuClan.button("Informações do Clã");
                 formMenuClan.button("Regras do Clã");
@@ -118,16 +119,13 @@ const formMenuClan = new ActionFormData()
         formMenuClan.button("Ver lista de Clãs");
     }
         
-
-    
-    formMenuClan.show(player).then((response) => {
-        if (response.canceled) { return; }///////////////////////////////////    Form Civil
-
-        if (player.getDynamicProperty("doclan") == "civil"){
-            DBCarregarClansName();
+    formMenuClan.show(player).then( async (response) => { if (response.canceled) { return; }///////////////////////////////////    Form Civil
+    if (player.getDynamicProperty("doclan") == "civil"){
+            await DBCarregarClansName();
         
             switch (response.selection){
                 case 0: // Criar clã
+                console.warn("Botao de criar cla clicado -->");
                     if (arrayclan.length < 10){
                         formcriaclan(player);
                     }
@@ -187,23 +185,23 @@ const formMenuClan = new ActionFormData()
                 //formmeuclan(player)
                 break;
             case 1:
-                if (TextoBilhete.length == 0){
-                    const aviso = "Não há bilhetes no momento..."
-                    VerBilhete(player, aviso);
-                    console.log("simasas");
-                }else {
-                    for (let x in TextoBilhete){
-                        if (TextoBilhete[x].clanName == player.getDynamicProperty("doclan")){
-                            VerBilhete(player, TextoBilhete[x].recado)
-                    }else {
-                        console.log("Não tem bilhete para voce");
-                    }
+            //     if (TextoBilhete.length == 0){
+            //         const aviso = "Não há bilhetes no momento..."
+            //         VerBilhete(player, aviso);
+            //         console.log("simasas");
+            //     }else {
+            //         for (let x in TextoBilhete){
+            //             if (TextoBilhete[x].clanName == player.getDynamicProperty("doclan")){
+            //                 VerBilhete(player, TextoBilhete[x].recado)
+            //         }else {
+            //             console.log("Não tem bilhete para voce");
+            //         }
 
-                }
-            }
-                console.log("Bilhete 1 --> " ,TextoBilhete.length);
+            //     }
+            // }
+            //     console.log("Bilhete 1 --> " ,TextoBilhete.length);
                 console.log("case1");
-                //formlistclans(player)
+            //     //formlistclans(player)
                 break;
             case 2:
                 DeixarBilhete(player)
@@ -212,6 +210,7 @@ const formMenuClan = new ActionFormData()
                 break;
             case 3:
                 console.log("case3");
+                await DBCarregarListaMembros(player.getDynamicProperty("doclan"));// O servidor do banco de dados deve estar ativo
                 form_ListarMembros(player, arrayMembros)
                 break;
             case 4:

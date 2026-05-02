@@ -1,5 +1,23 @@
 {
     "recommendations": [
-        "google.geminicodeassist"
+        "google.geminicodeassist",
+        "zz5840.minecraft-lang-colorizer",
+        "emilfarmanli.todofy-extension",
+        "alefragnani.bookmarks",
+        "blockceptionltd.blockceptionvscodeminecraftbedrockdevelopmentextension",
+        "usernamehw.errorlens",
+        "oderwat.indent-rainbow",
+        "legend077.json-ui-auto-completions",
+        "mojang-studios.minecraft-debugger",
+        "nicita3.minecraft-bedrock-glyph-viewer",
+        "nobuwu.mc-color",
+        "stevertus.mcscript",
+        "ms-ceintl.vscode-language-pack-pt-br",
+        "esbenp.prettier-vscode",
+        "mohsen1.prettify-json",
+        "destruc7i0n.vscode-bedrock-definitions",
+        "dingsel.bedrock-ui",
+        "levertion.mcfunction",
+        "stone926.minecraft-resourcepack-helper"
     ]
 }
